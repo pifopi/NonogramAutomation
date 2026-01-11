@@ -1,0 +1,11 @@
+{
+  "DiscordChannelId": 1460016677319344210,
+  "DiscordUserId": 282197676982927375,
+  "RealPhoneInstances": [
+    {
+      "Name": "Compte_01",
+      "IP": "192.168.1.63",
+      "Port": 5555
+    }
+  ]
+}

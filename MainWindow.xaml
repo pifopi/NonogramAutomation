@@ -1,0 +1,48 @@
+﻿<Window x:Class="NonogramAutomation.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="MainWindow" SizeToContent="WidthAndHeight">
+    <Grid>
+        <StackPanel>
+            <TextBlock>
+                Real phones via IP instances
+            </TextBlock>
+            <DataGrid ItemsSource="{Binding ADBInstancesRealPhoneViaIP}"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name, Mode=OneWay}" />
+                    <DataGridTextColumn Header="Ip" Binding="{Binding IP, Mode=OneWay}" />
+                    <DataGridTextColumn Header="Port" Binding="{Binding Port, Mode=OneWay}" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status, Mode=OneWay}" />
+                    <DataGridTemplateColumn Header="Selected Program">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding ProgramList}" SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsIdle}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Start">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Execute" Click="StartProgram" IsEnabled="{Binding IsIdle}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Stop">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Execute" Click="StopProgram" IsEnabled="{Binding IsRunning}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </Grid>
+</Window>

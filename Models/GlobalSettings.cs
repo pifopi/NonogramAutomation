@@ -1,0 +1,9 @@
+﻿namespace NonogramAutomation.Models
+{
+    public class GlobalSettings
+    {
+        public ulong DiscordChannelId { get; set; }
+        public ulong DiscordUserId { get; set; }
+        public List<RealPhoneSettings> RealPhoneInstances { get; set; } = [];
+    }
+}
