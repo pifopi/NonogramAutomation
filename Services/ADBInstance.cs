@@ -93,14 +93,7 @@ namespace NonogramAutomation.Services
 
         public async Task StartFavoritesAsync()
         {
-            List<string> puzzles = new();
-
-            var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture);
-            using (var reader = new System.IO.StreamReader("config/table.csv"))
-            using (var csv = new CsvHelper.CsvReader(reader, config))
-            {
-                puzzles = csv.GetRecords<PuzzleRecord>().Select(r => r.Name).ToList();
-            }
+            List<string> puzzles = GetAllPuzzles();
 
             try
             {
@@ -109,8 +102,12 @@ namespace NonogramAutomation.Services
                 await ConnectToInstanceAsync(_programCts.Token);
                 undoActions.Add(async () => await DisconnectFromInstanceAsync());
 
+                int i = 0;
                 foreach (string puzzle in puzzles)
                 {
+                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"Processing puzzle:{puzzle} {i}/{puzzles.Count}");
+                    i++;
+
                     await GoToSearchMenuAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                     await InputPuzzleAsync(TimeSpan.FromSeconds(10), _programCts.Token, puzzle);
                     await GoToPuzzleListAsync(TimeSpan.FromSeconds(10), _programCts.Token);
@@ -126,6 +123,7 @@ namespace NonogramAutomation.Services
                     await GoToPuzzleDetailsMenuAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                     await FavoritePuzzleAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                 }
+                Logger.Log(Logger.LogLevel.Info, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Done processing all puzzles");
                 return;
             }
             catch (OperationCanceledException exception)
@@ -136,6 +134,32 @@ namespace NonogramAutomation.Services
             {
                 Logger.Log(Logger.LogLevel.Warning, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
             }
+        }
+
+        private List<string> GetPuzzlesFromCsv(System.IO.FileInfo csvFile)
+        {
+            Logger.Log(Logger.LogLevel.Info, LogHeader, $"Reading csv file : {csvFile.FullName}");
+
+            var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture);
+            using (var reader = new System.IO.StreamReader(csvFile.FullName))
+            using (var csv = new CsvHelper.CsvReader(reader, config))
+            {
+                return csv.GetRecords<PuzzleRecord>().Select(r => r.Name).ToList();
+            }
+        }
+
+        private List<string> GetAllPuzzles()
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
+
+            var directoryInfo = new System.IO.DirectoryInfo("config");
+
+            List<string> puzzles = new();
+            foreach (var fileInfo in directoryInfo.EnumerateFiles("*.csv"))
+            {
+                puzzles.AddRange(GetPuzzlesFromCsv(fileInfo));
+            }
+            return puzzles;
         }
 
         private async Task GoToSearchMenuAsync(TimeSpan timeout, CancellationToken parentToken)
