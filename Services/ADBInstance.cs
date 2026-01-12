@@ -223,11 +223,12 @@ namespace NonogramAutomation.Services
                 linkedCts.Token.ThrowIfCancellationRequested();
 
                 OpenCvSharp.Mat image = await Utils.Utils.GetImageAsync(_adbClient, _deviceData, TimeSpan.FromSeconds(10), linkedCts.Token);
-                if (ImageProcessing.DetectPuzzleDetailsMenu(image))
-                {
-                    Logger.Log(Logger.LogLevel.Info, LogHeader, "Found puzzle details menu");
-                    return;
-                }
+                //TODO no detection here as it's not always the same screen
+                //if (ImageProcessing.DetectPuzzleDetailsMenu(image))
+                //{
+                //    Logger.Log(Logger.LogLevel.Info, LogHeader, "Found puzzle details menu");
+                //    return;
+                //}
 
                 var searchDetailsButtonResult = ImageProcessing.SearchDetailsButton(image);
                 if (searchDetailsButtonResult.HasValue)
@@ -236,6 +237,7 @@ namespace NonogramAutomation.Services
                     Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on location:{location} (alpha:{alpha})");
                     await _adbClient.ClickAsync(_deviceData, location, linkedCts.Token);
                     await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
+                    return;//TODO don't return here
                 }
                 await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
             }
@@ -253,12 +255,11 @@ namespace NonogramAutomation.Services
                 linkedCts.Token.ThrowIfCancellationRequested();
 
                 OpenCvSharp.Mat image = await Utils.Utils.GetImageAsync(_adbClient, _deviceData, TimeSpan.FromSeconds(10), linkedCts.Token);
-                //TODO no detection here as it's not always the same screen
-                //if (ImageProcessing.DetectPuzzleListMenu(image))
-                //{
-                //    Logger.Log(Logger.LogLevel.Info, LogHeader, "Found puzzle list menu");
-                //    return;
-                //}
+                if (ImageProcessing.DetectPuzzleListMenu(image))
+                {
+                    Logger.Log(Logger.LogLevel.Info, LogHeader, "Found puzzle list menu");
+                    return;
+                }
 
                 var searchFavoriteButtonResult = ImageProcessing.SearchFavoriteButton(image);
                 if (searchFavoriteButtonResult.HasValue)
@@ -267,7 +268,6 @@ namespace NonogramAutomation.Services
                     Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on location:{location} (alpha:{alpha})");
                     await _adbClient.ClickAsync(_deviceData, location, linkedCts.Token);
                     await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-                    return;//TODO don't return here
                 }
                 await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
             }
