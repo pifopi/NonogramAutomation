@@ -2,7 +2,8 @@
 {
     public enum ProgramType
     {
+        Bourse,
         Favorites,
-        Bourse
+        Download
     }
 }

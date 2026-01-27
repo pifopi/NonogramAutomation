@@ -69,6 +69,7 @@ namespace NonogramAutomation.Services
             {
                 ProgramType.Favorites => StartFavoritesAsync,
                 ProgramType.Bourse => StartBourseAsync,
+                ProgramType.Download => StartDownloadAsync,
                 _ => throw new NotImplementedException()
             };
             Task.Run(task).ContinueWith(t => Status = InstanceStatus.Idle);
@@ -263,13 +264,13 @@ namespace NonogramAutomation.Services
 
         public async Task StartBourseAsync()
         {
-
             try
             {
                 await ConnectToInstanceAsync(_programCts.Token);
 
                 await GoToBourseAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                 await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _programCts.Token);
+                await CloseAdAsync(TimeSpan.FromSeconds(60), _programCts.Token);
             }
             catch (OperationCanceledException exception)
             {
@@ -309,7 +310,7 @@ namespace NonogramAutomation.Services
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                using var searchTimeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(2000));
+                using var searchTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
                 using var searchLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(linkedCts.Token, searchTimeoutCts.Token);
 
                 AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await _adbClient.FindElementAsync(_deviceData, query, searchLinkedCts.Token);
@@ -323,6 +324,60 @@ namespace NonogramAutomation.Services
 
                 Logger.Log(Logger.LogLevel.Info, LogHeader, $"Scrolling to find {item}");
                 await _adbClient.SwipeAsync(_deviceData, new System.Drawing.Point(500, 1500), new System.Drawing.Point(500, 500), 500, linkedCts.Token);
+            }
+        }
+
+        private async Task CloseAdAsync(TimeSpan timeout, CancellationToken parentToken)
+        {
+            using var timeoutCts = new CancellationTokenSource(timeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
+
+            using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
+
+            // Récompense accordée
+            //OpenCvSharp.Mat image = await Utils.Utils.GetImageAsync(_adbClient, _deviceData, TimeSpan.FromSeconds(10), linkedCts.Token);
+            //Tesseract.Pix tesseractImage = Utils.Utils.ConvertToPix(image);
+            //tesseractImage.
+        }
+
+        public async Task StartDownloadAsync()
+        {
+            try
+            {
+                await ConnectToInstanceAsync(_programCts.Token);
+
+                string query = $"//node[@resource-id='com.ucdevs.jcross:id/imgSizeHolder'][descendant::node[@resource-id='com.ucdevs.jcross:id/imgDwlMini']]";
+
+                System.Xml.XmlDocument? lastScreen = null;
+                System.Xml.XmlDocument? currentScreen = await _adbClient.DumpScreenAsync(_deviceData, _programCts.Token);
+
+                while (lastScreen != currentScreen)
+                {
+                    using var searchTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    using var searchLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(_programCts.Token, searchTimeoutCts.Token);
+                    AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await _adbClient.FindElementAsync(_deviceData, query, searchLinkedCts.Token);
+                    if (element is null)
+                    {
+                        Logger.Log(Logger.LogLevel.Info, LogHeader, $"No download button found, scrolling");
+                        await _adbClient.SwipeAsync(_deviceData, new System.Drawing.Point(500, 1500), new System.Drawing.Point(500, 500), 500, _programCts.Token);
+                    }
+                    else
+                    {
+                        Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on download button");
+                        await element.ClickAsync(_programCts.Token);
+                        await Task.Delay(TimeSpan.FromMilliseconds(100), _programCts.Token);
+                    }
+                }
+
+                Logger.Log(Logger.LogLevel.Info, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Done processing all download");
+            }
+            catch (OperationCanceledException exception)
+            {
+                Logger.Log(Logger.LogLevel.Info, LogHeader, $"An exception has been raised:{exception}");
+            }
+            catch (Exception exception)
+            {
+                Logger.Log(Logger.LogLevel.Warning, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
             }
         }
     }
