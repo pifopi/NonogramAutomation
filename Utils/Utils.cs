@@ -1,4 +1,7 @@
-﻿namespace NonogramAutomation.Utils
+﻿using AdvancedSharpAdbClient.DeviceCommands;
+using NonogramAutomation.Services;
+
+namespace NonogramAutomation.Utils
 {
     public static class Utils
     {
@@ -140,6 +143,30 @@
         {
             OpenCvSharp.Cv2.ImEncode(".bmp", mat, out byte[] stream);
             return Tesseract.Pix.LoadFromMemory(stream);
+        }
+
+        public static async Task<AdvancedSharpAdbClient.DeviceCommands.Models.Element?> FindElementByResourceIdAsync(
+                AdvancedSharpAdbClient.AdbClient adbClient,
+                AdvancedSharpAdbClient.Models.DeviceData deviceData,
+                string resourceId,
+                CancellationToken token
+            )
+        {
+            return await adbClient.FindElementAsync(deviceData, $"//node[@resource-id='{resourceId}']", token);
+        }
+
+        public static async Task<bool> DetectElementByResourceIdAsync(
+                AdvancedSharpAdbClient.AdbClient adbClient,
+                AdvancedSharpAdbClient.Models.DeviceData deviceData,
+                string resourceId,
+                TimeSpan timeout,
+                CancellationToken parentToken
+            )
+        {
+            using var timeoutCts = new CancellationTokenSource(timeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
+
+            return await FindElementByResourceIdAsync(adbClient, deviceData, resourceId, linkedCts.Token) is not null;
         }
     }
 }

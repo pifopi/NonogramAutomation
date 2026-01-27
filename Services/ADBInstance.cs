@@ -68,6 +68,7 @@ namespace NonogramAutomation.Services
             Func<Task> task = SelectedProgram switch
             {
                 ProgramType.Favorites => StartFavoritesAsync,
+                ProgramType.Bourse => StartBourseAsync,
                 _ => throw new NotImplementedException()
             };
             Task.Run(task).ContinueWith(t => Status = InstanceStatus.Idle);
@@ -85,9 +86,37 @@ namespace NonogramAutomation.Services
 
         protected abstract Task DisconnectFromInstanceAsync();
 
+        private async Task ClickElementByResourceIdAsync(
+                AdvancedSharpAdbClient.AdbClient adbClient,
+                AdvancedSharpAdbClient.Models.DeviceData deviceData,
+                string resourceId,
+                TimeSpan timeout,
+                CancellationToken parentToken
+            )
+        {
+            using var timeoutCts = new CancellationTokenSource(timeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
+
+            Logger.Log(Logger.LogLevel.Info, LogHeader, $"Searching for {resourceId}");
+
+            while (true)
+            {
+                linkedCts.Token.ThrowIfCancellationRequested();
+
+                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await Utils.Utils.FindElementByResourceIdAsync(adbClient, deviceData, resourceId, linkedCts.Token);
+                if (element != null)
+                {
+                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on {resourceId}");
+                    await element.ClickAsync(linkedCts.Token);
+                    await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
+                    return;
+                }
+            }
+        }
+
         public class PuzzleRecord
         {
-            [CsvHelper.Configuration.Attributes.Name("Puzzle_ID:Puzzle_name")]
+            [CsvHelper.Configuration.Attributes.Name("Puzzle ID:Puzzle Name")]
             public required string Name { get; set; }
         }
 
@@ -97,10 +126,7 @@ namespace NonogramAutomation.Services
 
             try
             {
-                await using UndoActions undoActions = new();
-
                 await ConnectToInstanceAsync(_programCts.Token);
-                undoActions.Add(async () => await DisconnectFromInstanceAsync());
 
                 int i = 0;
                 foreach (string puzzle in puzzles)
@@ -111,16 +137,17 @@ namespace NonogramAutomation.Services
                     await GoToSearchMenuAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                     await InputPuzzleAsync(TimeSpan.FromSeconds(10), _programCts.Token, puzzle);
                     await GoToPuzzleListAsync(TimeSpan.FromSeconds(10), _programCts.Token);
+                    await GoToPuzzleDetailsMenuAsync(TimeSpan.FromSeconds(10), _programCts.Token);
 
-                    OpenCvSharp.Mat image = await Utils.Utils.GetImageAsync(_adbClient, _deviceData, TimeSpan.FromSeconds(10), _programCts.Token);
-                    var searchFavoriteIconResult = ImageProcessing.SearchFavoriteIcon(image);
-                    if (searchFavoriteIconResult.HasValue)
+                    bool isAlreadyFavorite = await Utils.Utils.DetectElementByResourceIdAsync(_adbClient, _deviceData, "com.ucdevs.jcross:id/removeFavorites", TimeSpan.FromSeconds(2), _programCts.Token);
+                    if (isAlreadyFavorite)
                     {
                         Logger.Log(Logger.LogLevel.Info, LogHeader, "Found favorite icon, skipping to next puzzle");
+                        await _adbClient.ClickBackButtonAsync(_deviceData, _programCts.Token);
                         continue;
                     }
 
-                    await GoToPuzzleDetailsMenuAsync(TimeSpan.FromSeconds(10), _programCts.Token);
+                    Logger.Log(Logger.LogLevel.Info, LogHeader, "Adding to favorite");
                     await FavoritePuzzleAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                 }
                 Logger.Log(Logger.LogLevel.Info, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Done processing all puzzles");
@@ -162,34 +189,11 @@ namespace NonogramAutomation.Services
             return puzzles;
         }
 
-        private async Task GoToSearchMenuAsync(TimeSpan timeout, CancellationToken parentToken)
+        private async Task GoToSearchMenuAsync(TimeSpan timeout, CancellationToken token)
         {
-            using var timeoutCts = new CancellationTokenSource(timeout);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
-
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
 
-            while (true)
-            {
-                linkedCts.Token.ThrowIfCancellationRequested();
-
-                OpenCvSharp.Mat image = await Utils.Utils.GetImageAsync(_adbClient, _deviceData, TimeSpan.FromSeconds(10), linkedCts.Token);
-                if (ImageProcessing.DetectSearchMenu(image))
-                {
-                    Logger.Log(Logger.LogLevel.Info, LogHeader, "Found search menu");
-                    return;
-                }
-
-                var searchFunnelButtonResult = ImageProcessing.SearchFunnelButton(image);
-                if (searchFunnelButtonResult.HasValue)
-                {
-                    (double alpha, System.Drawing.Point location) = searchFunnelButtonResult.Value;
-                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on location:{location} (alpha:{alpha})");
-                    await _adbClient.ClickAsync(_deviceData, location, linkedCts.Token);
-                    await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-                }
-                await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-            }
+            await ClickElementByResourceIdAsync(_adbClient, _deviceData, "com.ucdevs.jcross:id/action_filter", timeout, token);
         }
 
         private async Task InputPuzzleAsync(TimeSpan timeout, CancellationToken parentToken, string puzzle)
@@ -199,10 +203,10 @@ namespace NonogramAutomation.Services
 
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
 
-            await _adbClient.ClearInputAsync(_deviceData, 10, _programCts.Token);
+            await _adbClient.ClearInputAsync(_deviceData, 10, linkedCts.Token);
             string puzzleId = System.Text.RegularExpressions.Regex.Replace(puzzle, @":.*(?=\])", "");
-            await _adbClient.SendTextAsync(_deviceData, puzzleId, _programCts.Token);
-            await _adbClient.ClickBackButtonAsync(_deviceData, _programCts.Token);
+            await _adbClient.SendTextAsync(_deviceData, puzzleId, linkedCts.Token);
+            await _adbClient.ClickBackButtonAsync(_deviceData, linkedCts.Token);
         }
 
         private async Task GoToPuzzleListAsync(TimeSpan timeout, CancellationToken parentToken)
@@ -235,65 +239,89 @@ namespace NonogramAutomation.Services
             }
         }
 
-        private async Task GoToPuzzleDetailsMenuAsync(TimeSpan timeout, CancellationToken parentToken)
+        private async Task GoToPuzzleDetailsMenuAsync(TimeSpan timeout, CancellationToken token)
         {
-            using var timeoutCts = new CancellationTokenSource(timeout);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
-
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
 
-            while (true)
+            await ClickElementByResourceIdAsync(_adbClient, _deviceData, "com.ucdevs.jcross:id/btnCtxMenu", timeout, token);
+        }
+
+        private async Task FavoritePuzzleAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
+
+            await ClickElementByResourceIdAsync(_adbClient, _deviceData, "com.ucdevs.jcross:id/addFavorites", timeout, token);
+        }
+
+        private enum BourseItem
+        {
+            Carte,
+            Café,
+            Katana,
+            Potion
+        }
+
+        public async Task StartBourseAsync()
+        {
+
+            try
             {
-                linkedCts.Token.ThrowIfCancellationRequested();
+                await ConnectToInstanceAsync(_programCts.Token);
 
-                OpenCvSharp.Mat image = await Utils.Utils.GetImageAsync(_adbClient, _deviceData, TimeSpan.FromSeconds(10), linkedCts.Token);
-                //TODO no detection here as it's not always the same screen
-                //if (ImageProcessing.DetectPuzzleDetailsMenu(image))
-                //{
-                //    Logger.Log(Logger.LogLevel.Info, LogHeader, "Found puzzle details menu");
-                //    return;
-                //}
-
-                var searchDetailsButtonResult = ImageProcessing.SearchDetailsButton(image);
-                if (searchDetailsButtonResult.HasValue)
-                {
-                    (double alpha, System.Drawing.Point location) = searchDetailsButtonResult.Value;
-                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on location:{location} (alpha:{alpha})");
-                    await _adbClient.ClickAsync(_deviceData, location, linkedCts.Token);
-                    await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-                    return;//TODO don't return here
-                }
-                await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
+                await GoToBourseAsync(TimeSpan.FromSeconds(10), _programCts.Token);
+                await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _programCts.Token);
+            }
+            catch (OperationCanceledException exception)
+            {
+                Logger.Log(Logger.LogLevel.Info, LogHeader, $"An exception has been raised:{exception}");
+            }
+            catch (Exception exception)
+            {
+                Logger.Log(Logger.LogLevel.Warning, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
             }
         }
 
-        private async Task FavoritePuzzleAsync(TimeSpan timeout, CancellationToken parentToken)
+        private async Task GoToBourseAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
+
+            await ClickElementByResourceIdAsync(_adbClient, _deviceData, "com.ucdevs.jcross:id/catBourse", timeout, token);
+        }
+
+        private async Task ScrollAndClickOnItemAsync(BourseItem item, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
 
+            string itemAsString = item switch
+            {
+                BourseItem.Carte => "Fragment",
+                BourseItem.Café => "Grains",
+                BourseItem.Katana => "Katana",
+                BourseItem.Potion => "Potion",
+                _ => throw new NotImplementedException()
+            };
+            string query = $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]";
+
             while (true)
             {
-                linkedCts.Token.ThrowIfCancellationRequested();
 
-                OpenCvSharp.Mat image = await Utils.Utils.GetImageAsync(_adbClient, _deviceData, TimeSpan.FromSeconds(10), linkedCts.Token);
-                if (ImageProcessing.DetectPuzzleListMenu(image))
+                using var searchTimeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(2000));
+                using var searchLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(linkedCts.Token, searchTimeoutCts.Token);
+
+                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await _adbClient.FindElementAsync(_deviceData, query, searchLinkedCts.Token);
+                if (element is not null)
                 {
-                    Logger.Log(Logger.LogLevel.Info, LogHeader, "Found puzzle list menu");
+                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on {item}");
+                    await element.ClickAsync(linkedCts.Token);
+                    await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
                     return;
                 }
 
-                var searchFavoriteButtonResult = ImageProcessing.SearchFavoriteButton(image);
-                if (searchFavoriteButtonResult.HasValue)
-                {
-                    (double alpha, System.Drawing.Point location) = searchFavoriteButtonResult.Value;
-                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"Clicking on location:{location} (alpha:{alpha})");
-                    await _adbClient.ClickAsync(_deviceData, location, linkedCts.Token);
-                    await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-                }
-                await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
+                Logger.Log(Logger.LogLevel.Info, LogHeader, $"Scrolling to find {item}");
+                await _adbClient.SwipeAsync(_deviceData, new System.Drawing.Point(500, 1500), new System.Drawing.Point(500, 500), 500, linkedCts.Token);
             }
         }
     }

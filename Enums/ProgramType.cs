@@ -2,6 +2,7 @@
 {
     public enum ProgramType
     {
-        Favorites
+        Favorites,
+        Bourse
     }
 }
