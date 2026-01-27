@@ -307,6 +307,7 @@ namespace NonogramAutomation.Services
 
             while (true)
             {
+                linkedCts.Token.ThrowIfCancellationRequested();
 
                 using var searchTimeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(2000));
                 using var searchLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(linkedCts.Token, searchTimeoutCts.Token);
