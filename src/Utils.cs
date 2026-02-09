@@ -1,7 +1,6 @@
 ﻿using AdvancedSharpAdbClient.DeviceCommands;
-using NonogramAutomation.Services;
 
-namespace NonogramAutomation.Utils
+namespace NonogramAutomation
 {
     public static class Utils
     {
@@ -37,12 +36,12 @@ namespace NonogramAutomation.Utils
             }
         }
 
-        public static async Task<OpenCvSharp.Mat> GetImageAsync(AdvancedSharpAdbClient.AdbClient adbClient, AdvancedSharpAdbClient.Models.DeviceData deviceData, TimeSpan timeout, CancellationToken parentToken)
+        public static async Task<OpenCvSharp.Mat> GetImageAsync(ADBInstance adbInstance, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbClient.GetFrameBufferAsync(deviceData, linkedCts.Token);
+            AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbInstance.AdbClient.GetFrameBufferAsync(adbInstance.DeviceData, linkedCts.Token);
             if (framebuffer.Header.Red.Length != 8 ||
                 framebuffer.Header.Green.Length != 8 ||
                 framebuffer.Header.Blue.Length != 8 ||
@@ -133,28 +132,78 @@ namespace NonogramAutomation.Utils
             return Tesseract.Pix.LoadFromMemory(stream);
         }
 
-        public static async Task<AdvancedSharpAdbClient.DeviceCommands.Models.Element?> FindElementByResourceIdAsync(
-                AdvancedSharpAdbClient.AdbClient adbClient,
-                AdvancedSharpAdbClient.Models.DeviceData deviceData,
-                string resourceId,
-                CancellationToken token
-            )
+        public static async Task<AdvancedSharpAdbClient.DeviceCommands.Models.Element?> FindElementAsync(ADBInstance adbInstance, string query, CancellationToken token)
         {
-            return await adbClient.FindElementAsync(deviceData, $"//node[@resource-id='{resourceId}']", token);
+            return await adbInstance.AdbClient.FindElementAsync(adbInstance.DeviceData, query, token);
         }
 
-        public static async Task<bool> DetectElementByResourceIdAsync(
-                AdvancedSharpAdbClient.AdbClient adbClient,
-                AdvancedSharpAdbClient.Models.DeviceData deviceData,
-                string resourceId,
-                TimeSpan timeout,
-                CancellationToken parentToken
-            )
+        public static async Task<bool> DetectElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            return await FindElementByResourceIdAsync(adbClient, deviceData, resourceId, linkedCts.Token) is not null;
+            AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, linkedCts.Token);
+            if (element is null)
+            {
+                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Element {query} not found");
+                return false;
+
+            }
+            else
+            {
+                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Element {query} found");
+                return true;
+            }
+        }
+
+        public static async Task ClickElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken parentToken)
+        {
+            using var timeoutCts = new CancellationTokenSource(timeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
+
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Searching for {query}");
+
+            while (true)
+            {
+                linkedCts.Token.ThrowIfCancellationRequested();
+
+                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, linkedCts.Token);
+                if (element != null)
+                {
+                    Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Clicking on {query}");
+                    await element.ClickAsync(linkedCts.Token);
+                    await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
+                    return;
+                }
+            }
+        }
+
+        public static async Task ClickBackButtonAsync(ADBInstance adbInstance, CancellationToken token)
+        {
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Clicking back");
+
+            await adbInstance.AdbClient.ClickBackButtonAsync(adbInstance.DeviceData, token);
+        }
+
+        public static async Task SwipeAsync(ADBInstance adbInstance, System.Drawing.Point first, System.Drawing.Point second, long speed, CancellationToken token)
+        {
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Swiping from {first} to {second}");
+
+            await adbInstance.AdbClient.SwipeAsync(adbInstance.DeviceData, first, second, speed, token);
+        }
+
+        public static async Task SwipeToBottomAsync(ADBInstance adbInstance, CancellationToken token)
+        {
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Swiping to bottom");
+
+            //TODO make it scroll faster
+            await SwipeAsync(adbInstance, new System.Drawing.Point(500, 1500), new System.Drawing.Point(500, 500), 500, token);
+        }
+        public static async Task<System.Xml.XmlDocument?> DumpScreenAsync(ADBInstance adbInstance, CancellationToken token)
+        {
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Dumping screen");
+
+            return await adbInstance.AdbClient.DumpScreenAsync(adbInstance.DeviceData, token);
         }
     }
 }

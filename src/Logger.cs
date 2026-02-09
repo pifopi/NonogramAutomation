@@ -1,6 +1,4 @@
-﻿using NonogramAutomation.Models;
-
-namespace NonogramAutomation.Services
+﻿namespace NonogramAutomation
 {
     public static class Logger
     {

@@ -1,7 +1,4 @@
-﻿using NonogramAutomation.Models;
-using NonogramAutomation.Services;
-
-namespace NonogramAutomation
+﻿namespace NonogramAutomation
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -40,7 +37,7 @@ namespace NonogramAutomation
                 });
             }
 
-            Utils.Utils.StartADBServer();
+            Utils.StartADBServer();
 
             DataContext = this;
         }

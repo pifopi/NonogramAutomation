@@ -1,8 +1,8 @@
-﻿namespace NonogramAutomation.Services
+﻿namespace NonogramAutomation
 {
     public static class ImageProcessing
     {
-        private static readonly OpenCvSharp.Mat _playButton = Utils.Utils.OpenImage("Assets/playButton.png");
+        private static readonly OpenCvSharp.Mat _playButton = Utils.OpenImage("assets/playButton.png");
 
         private static (double, System.Drawing.Point)? Search(OpenCvSharp.Mat screen, OpenCvSharp.Mat template)
         {
@@ -26,8 +26,8 @@
 
         public static bool DetectPuzzleListMenu(OpenCvSharp.Mat screen)
         {
-            OpenCvSharp.Mat location = Utils.Utils.Extract(screen, 0.105, 0.166, 0.806, 0.299);
-            return Utils.Utils.IsMatching(location, 175, 205, 155, 25);
+            OpenCvSharp.Mat location = Utils.Extract(screen, 0.105, 0.166, 0.806, 0.299);
+            return Utils.IsMatching(location, 175, 205, 155, 25);
         }
     }
 }

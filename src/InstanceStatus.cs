@@ -1,4 +1,4 @@
-﻿namespace NonogramAutomation.Enums
+﻿namespace NonogramAutomation
 {
     public enum InstanceStatus
     {

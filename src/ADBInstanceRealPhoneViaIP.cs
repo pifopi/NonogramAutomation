@@ -1,8 +1,8 @@
-﻿namespace NonogramAutomation.Services
+﻿namespace NonogramAutomation
 {
     public class ADBInstanceRealPhoneViaIP : ADBInstanceViaIP
     {
-        protected override string LogHeader
+        public override string LogHeader
         {
             get => $"{Name} | {IP}:{Port}";
         }

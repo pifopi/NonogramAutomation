@@ -1,11 +1,8 @@
-﻿using NonogramAutomation.Models;
-
-namespace NonogramAutomation.Services
+﻿namespace NonogramAutomation
 {
     public class ADBInstanceMuMu : ADBInstanceViaIP
     {
         private int _mumuId = 1;
-        private static SemaphoreSlim _emulatorSemaphore = new(0, 1);
 
         public int MuMuId
         {
@@ -13,7 +10,7 @@ namespace NonogramAutomation.Services
             set { _mumuId = value; OnPropertyChanged(); }
         }
 
-        protected override string LogHeader
+        public override string LogHeader
         {
             get => $"{Name} | {IP}:{Port} | {MuMuId}";
         }

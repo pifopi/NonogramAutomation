@@ -1,4 +1,4 @@
-﻿namespace NonogramAutomation.Models
+﻿namespace NonogramAutomation
 {
     public class GlobalSettings
     {
