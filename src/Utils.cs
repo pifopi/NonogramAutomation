@@ -196,9 +196,12 @@ namespace NonogramAutomation
         {
             Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Swiping to bottom");
 
-            //TODO make it scroll faster
-            await SwipeAsync(adbInstance, new System.Drawing.Point(500, 1500), new System.Drawing.Point(500, 500), 500, token);
+            AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbInstance.AdbClient.GetFrameBufferAsync(adbInstance.DeviceData);
+            int height = (int)framebuffer.Header.Height;
+            int width = (int)framebuffer.Header.Width;
+            await SwipeAsync(adbInstance, new System.Drawing.Point(width / 2, height - 100), new System.Drawing.Point(width / 2, 100), 2000, token);
         }
+
         public static async Task<System.Xml.XmlDocument?> DumpScreenAsync(ADBInstance adbInstance, CancellationToken token)
         {
             Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Dumping screen");
