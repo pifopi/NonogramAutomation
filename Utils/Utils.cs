@@ -5,18 +5,6 @@ namespace NonogramAutomation.Utils
 {
     public static class Utils
     {
-        public static void ExecuteCmd(string cmd)
-        {
-            System.Diagnostics.Process process = new()
-            {
-                StartInfo = new("cmd.exe", $"/C {cmd}")
-                {
-                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
-                }
-            };
-            process.Start();
-        }
-
         public static async Task<AdvancedSharpAdbClient.Models.DeviceData> GetDeviceDataFromAsync(AdvancedSharpAdbClient.AdbClient adbClient, string key, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
