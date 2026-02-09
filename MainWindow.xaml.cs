@@ -8,6 +8,7 @@ namespace NonogramAutomation
     /// </summary>
     public partial class MainWindow : System.Windows.Window
     {
+        public System.Collections.ObjectModel.ObservableCollection<ADBInstanceMuMu> ADBInstancesMuMu { get; set; } = [];
         public System.Collections.ObjectModel.ObservableCollection<ADBInstanceRealPhoneViaIP> ADBInstancesRealPhoneViaIP { get; set; } = [];
         public MainWindow()
         {
@@ -19,6 +20,15 @@ namespace NonogramAutomation
 
             Logger.Log(Logger.LogLevel.Info, "", "-------------------------------------------------------------------------");
             Logger.Log(Logger.LogLevel.Info, "", $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Starting the program");
+
+            foreach (var s in SettingsManager.GlobalSettings.MuMuInstances)
+            {
+                ADBInstancesMuMu.Add(new ADBInstanceMuMu
+                {
+                    Name = s.Name,
+                    MuMuId = s.MuMuId
+                });
+            }
 
             foreach (var s in SettingsManager.GlobalSettings.RealPhoneInstances)
             {

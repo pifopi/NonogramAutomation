@@ -1,6 +1,13 @@
 {
   "DiscordChannelId": 1460016677319344210,
   "DiscordUserId": 282197676982927375,
+  "MuMuPath": "C:\\Program Files\\Netease\\MuMuPlayerGlobal-12.0",
+  "MuMuInstances": [
+    {
+      "Name": "Compte_01",
+      "MuMuId": 0
+    }
+  ],
   "RealPhoneInstances": [
     {
       "Name": "Compte_01",
