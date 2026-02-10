@@ -218,7 +218,6 @@ namespace NonogramAutomation
             {
                 await ConnectToInstanceAsync(_programCts.Token);
 
-                await ShowNotification("toto");
                 await GoToBourseAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                 await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _programCts.Token);
                 await WaitForReward(TimeSpan.FromSeconds(60), _programCts.Token);
@@ -233,11 +232,6 @@ namespace NonogramAutomation
             {
                 Logger.Log(Logger.LogLevel.Warning, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
             }
-        }
-
-        public async Task ShowNotification(string message)
-        {
-
         }
 
         private async Task GoToBourseAsync(TimeSpan timeout, CancellationToken token)
@@ -292,23 +286,7 @@ namespace NonogramAutomation
 
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
 
-            var tesseractEngine = new Tesseract.TesseractEngine("Assets", "fra", Tesseract.EngineMode.Default);
-
-            while (true)
-            {
-                linkedCts.Token.ThrowIfCancellationRequested();
-
-                OpenCvSharp.Mat image = await Utils.GetImageAsync(this, TimeSpan.FromSeconds(10), linkedCts.Token);
-
-                using Tesseract.Page page = tesseractEngine.Process(Utils.ConvertToPix(image));
-                string text = page.GetText();
-
-                if (text.Contains("Récompense accordée"))
-                {
-                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"Reward collected");
-                    return;
-                }
-            }
+            await Task.Delay(TimeSpan.FromSeconds(45), linkedCts.Token);
         }
 
         private async Task ReturnToMainMenuAsync(TimeSpan timeout, CancellationToken parentToken)
