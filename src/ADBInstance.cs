@@ -6,7 +6,7 @@ namespace NonogramAutomation
     {
         private string _name = "New instance";
         private InstanceStatus _status = InstanceStatus.Idle;
-        private ProgramType _selectedProgram = ProgramType.Favorites;
+        private ProgramType _selectedProgram = ProgramType.Dump;
 
         private CancellationTokenSource _programCts = new();
 
@@ -67,8 +67,9 @@ namespace NonogramAutomation
             _programCts = new CancellationTokenSource();
             Func<Task> task = SelectedProgram switch
             {
-                ProgramType.Favorites => StartFavoritesAsync,
+                ProgramType.Dump => StartDumpAsync,
                 ProgramType.Bourse => StartBourseAsync,
+                ProgramType.Favorites => StartFavoritesAsync,
                 ProgramType.Download => StartDownloadAsync,
                 _ => throw new NotImplementedException()
             };
@@ -91,6 +92,24 @@ namespace NonogramAutomation
         {
             [CsvHelper.Configuration.Attributes.Name("Puzzle ID:Puzzle Name")]
             public required string Name { get; set; }
+        }
+
+        public async Task StartDumpAsync()
+        {
+            try
+            {
+                await ConnectToInstanceAsync(_programCts.Token);
+
+                await Utils.DumpAllAsync(this, "Dump", true, _programCts.Token);
+            }
+            catch (OperationCanceledException exception)
+            {
+                Logger.Log(Logger.LogLevel.Info, LogHeader, $"An exception has been raised:{exception}");
+            }
+            catch (Exception exception)
+            {
+                Logger.Log(Logger.LogLevel.Warning, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+            }
         }
 
         public async Task StartFavoritesAsync()
@@ -124,7 +143,6 @@ namespace NonogramAutomation
                     await FavoritePuzzleAsync(TimeSpan.FromSeconds(10), _programCts.Token);
                 }
                 Logger.Log(Logger.LogLevel.Info, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Done processing all puzzles");
-                return;
             }
             catch (OperationCanceledException exception)
             {
@@ -214,23 +232,26 @@ namespace NonogramAutomation
 
         public async Task StartBourseAsync()
         {
-            try
+            while (true)
             {
-                await ConnectToInstanceAsync(_programCts.Token);
+                try
+                {
+                    await ConnectToInstanceAsync(_programCts.Token);
 
-                await GoToBourseAsync(TimeSpan.FromSeconds(10), _programCts.Token);
-                await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _programCts.Token);
-                await WaitForReward(TimeSpan.FromSeconds(60), _programCts.Token);
-                await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _programCts.Token);
-                await Task.Delay(TimeSpan.FromMinutes(20), _programCts.Token);
-            }
-            catch (OperationCanceledException exception)
-            {
-                Logger.Log(Logger.LogLevel.Info, LogHeader, $"An exception has been raised:{exception}");
-            }
-            catch (Exception exception)
-            {
-                Logger.Log(Logger.LogLevel.Warning, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+                    await GoToBourseAsync(TimeSpan.FromSeconds(10), _programCts.Token);
+                    await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _programCts.Token);
+                    await WaitForReward(TimeSpan.FromSeconds(60), _programCts.Token);
+                    await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _programCts.Token);
+                    await Task.Delay(TimeSpan.FromMinutes(20), _programCts.Token);
+                }
+                catch (OperationCanceledException exception)
+                {
+                    Logger.Log(Logger.LogLevel.Info, LogHeader, $"An exception has been raised:{exception}");
+                }
+                catch (Exception exception)
+                {
+                    Logger.Log(Logger.LogLevel.Warning, LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+                }
             }
         }
 
@@ -287,6 +308,8 @@ namespace NonogramAutomation
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
 
             await Task.Delay(TimeSpan.FromSeconds(45), linkedCts.Token);
+
+            await Utils.DumpAllAsync(this, "Rewards", false, linkedCts.Token);
         }
 
         private async Task ReturnToMainMenuAsync(TimeSpan timeout, CancellationToken parentToken)
@@ -319,7 +342,7 @@ namespace NonogramAutomation
                 string query = $"//node[@resource-id='com.ucdevs.jcross:id/imgSizeHolder'][descendant::node[@resource-id='com.ucdevs.jcross:id/imgDwlMini']]";
 
                 System.Xml.XmlDocument? lastScreen = null;
-                System.Xml.XmlDocument? currentScreen = await Utils.DumpScreenAsync(this, _programCts.Token);
+                System.Xml.XmlDocument? currentScreen = await Utils.DumpXMLAsync(this, _programCts.Token);
 
                 while (lastScreen != currentScreen)
                 {

@@ -76,17 +76,21 @@ namespace NonogramAutomation
             return OpenCvSharp.Cv2.ImRead(filename);
         }
 
-        public static OpenCvSharp.Mat Extract(OpenCvSharp.Mat input, double startXPercent, double startYPercent, double sizeXPercent, double sizeYPercent)
+        private static OpenCvSharp.Mat Extract(OpenCvSharp.Mat image, OpenCvSharp.Rect rectangle)
         {
-            int startX = (int)(input.Width * startXPercent);
-            int startY = (int)(input.Height * startYPercent);
-            int sizeX = (int)(input.Width * sizeXPercent);
-            int sizeY = (int)(input.Height * sizeYPercent);
+            return new(image, rectangle);
+        }
+
+        public static OpenCvSharp.Mat Extract(OpenCvSharp.Mat image, double startXPercent, double startYPercent, double sizeXPercent, double sizeYPercent)
+        {
+            int startX = (int)(image.Width * startXPercent);
+            int startY = (int)(image.Height * startYPercent);
+            int sizeX = (int)(image.Width * sizeXPercent);
+            int sizeY = (int)(image.Height * sizeYPercent);
 
             OpenCvSharp.Rect rectangle = new(startX, startY, sizeX, sizeY);
-            OpenCvSharp.Mat output = new(input, rectangle);
 
-            return output;
+            return Extract(image, rectangle);
         }
 
         private static bool IsBetween(double value, double min, double max)
@@ -202,11 +206,54 @@ namespace NonogramAutomation
             await SwipeAsync(adbInstance, new System.Drawing.Point(width / 2, height - 100), new System.Drawing.Point(width / 2, 100), 2000, token);
         }
 
-        public static async Task<System.Xml.XmlDocument?> DumpScreenAsync(ADBInstance adbInstance, CancellationToken token)
+        public static async Task<System.Xml.XmlDocument?> DumpXMLAsync(ADBInstance adbInstance, CancellationToken token)
         {
             Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Dumping screen");
 
             return await adbInstance.AdbClient.DumpScreenAsync(adbInstance.DeviceData, token);
+        }
+
+        private static OpenCvSharp.Rect ParseBounds(System.Xml.XmlNode node)
+        {
+            System.Xml.XmlAttribute? boundsAttr = (node.Attributes?["bounds"]) ?? throw new Exception("xml node has no bounds");
+            var match = System.Text.RegularExpressions.Regex.Match(boundsAttr.Value, @"\[(\d+),(\d+)\]\[(\d+),(\d+)\]");
+            if (!match.Success)
+            {
+                throw new Exception("Bounds string was invalid");
+            }
+
+            int left = int.Parse(match.Groups[1].Value);
+            int top = int.Parse(match.Groups[2].Value);
+            int right = int.Parse(match.Groups[3].Value);
+            int bottom = int.Parse(match.Groups[4].Value);
+
+            return new OpenCvSharp.Rect(left, top, right - left, bottom - top);
+        }
+
+        public static async Task DumpAllAsync(ADBInstance adbInstance, string name, bool dumpBounds, CancellationToken token)
+        {
+            string folderName = "Dumps";
+            string fullName = $"{folderName}/{name}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}";
+            System.IO.Directory.CreateDirectory(folderName);
+
+            System.Xml.XmlDocument? xml = await DumpXMLAsync(adbInstance, token) ?? throw new Exception("xml document was null");
+            xml.Save($"{fullName}.xml");
+
+            OpenCvSharp.Mat image = await GetImageAsync(adbInstance, TimeSpan.FromSeconds(10), token);
+            image.SaveImage($"{fullName}.png");
+
+            if (dumpBounds)
+            {
+                System.Xml.XmlNodeList? nodes = xml.SelectNodes("//*[@bounds]") ?? throw new Exception("xml document is invalid");
+                int count = nodes.Count;
+                int index = 0;
+                foreach (System.Xml.XmlNode node in nodes)
+                {
+                    OpenCvSharp.Rect bounds = ParseBounds(node);
+                    Extract(image, bounds).SaveImage($"{fullName}_{index}_{count}.png");
+                    index++;
+                }
+            }
         }
     }
 }
