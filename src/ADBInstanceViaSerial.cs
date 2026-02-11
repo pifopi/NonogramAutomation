@@ -10,7 +10,7 @@
             set { _serialName = value; OnPropertyChanged(); }
         }
 
-        protected override async Task ConnectToInstanceAsync(CancellationToken token)
+        public override async Task ConnectToInstanceAsync(CancellationToken token)
         {
             DeviceData = await Utils.GetDeviceDataFromAsync(AdbClient, SerialName, TimeSpan.FromMinutes(1), token);
         }

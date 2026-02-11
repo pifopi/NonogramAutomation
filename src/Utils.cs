@@ -215,7 +215,7 @@ namespace NonogramAutomation
 
         private static OpenCvSharp.Rect ParseBounds(System.Xml.XmlNode node)
         {
-            System.Xml.XmlAttribute? boundsAttr = (node.Attributes?["bounds"]) ?? throw new Exception("xml node has no bounds");
+            System.Xml.XmlAttribute boundsAttr = (node.Attributes?["bounds"]) ?? throw new Exception("xml node has no bounds");
             var match = System.Text.RegularExpressions.Regex.Match(boundsAttr.Value, @"\[(\d+),(\d+)\]\[(\d+),(\d+)\]");
             if (!match.Success)
             {
@@ -236,7 +236,7 @@ namespace NonogramAutomation
             string fullName = $"{folderName}/{name}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}";
             System.IO.Directory.CreateDirectory(folderName);
 
-            System.Xml.XmlDocument? xml = await DumpXMLAsync(adbInstance, token) ?? throw new Exception("xml document was null");
+            System.Xml.XmlDocument xml = await DumpXMLAsync(adbInstance, token) ?? throw new Exception("xml document was null");
             xml.Save($"{fullName}.xml");
 
             OpenCvSharp.Mat image = await GetImageAsync(adbInstance, TimeSpan.FromSeconds(10), token);
@@ -244,7 +244,7 @@ namespace NonogramAutomation
 
             if (dumpBounds)
             {
-                System.Xml.XmlNodeList? nodes = xml.SelectNodes("//*[@bounds]") ?? throw new Exception("xml document is invalid");
+                System.Xml.XmlNodeList nodes = xml.SelectNodes("//*[@bounds]") ?? throw new Exception("xml document is invalid");
                 int count = nodes.Count;
                 int index = 0;
                 foreach (System.Xml.XmlNode node in nodes)

@@ -17,7 +17,7 @@
             set { _port = value; OnPropertyChanged(); }
         }
 
-        protected override async Task ConnectToInstanceAsync(CancellationToken token)
+        public override async Task ConnectToInstanceAsync(CancellationToken token)
         {
             Port = GetPort();
 
