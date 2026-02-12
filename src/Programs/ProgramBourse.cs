@@ -23,11 +23,11 @@ namespace NonogramAutomation
                 {
                     await _adbInstance.ConnectToInstanceAsync(_token);
 
+                    await Task.Delay(TimeSpan.FromMinutes(20), _token);
                     await GoToBourseAsync(TimeSpan.FromSeconds(10), _token);
                     await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _token);
                     await WaitForReward(TimeSpan.FromSeconds(60), _token);
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
-                    await Task.Delay(TimeSpan.FromMinutes(20), _token);
                 }
                 catch (Exception exception)
                 {
@@ -105,6 +105,7 @@ namespace NonogramAutomation
                 linkedCts.Token.ThrowIfCancellationRequested();
 
                 await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
+                await Task.Delay(TimeSpan.FromSeconds(1), linkedCts.Token);
                 bool isOnMainMenu = await Utils.DetectElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/catBourse']", TimeSpan.FromSeconds(2), linkedCts.Token);
                 if (isOnMainMenu)
                 {
