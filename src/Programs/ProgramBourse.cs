@@ -25,7 +25,7 @@ namespace NonogramAutomation
 
                     await Task.Delay(TimeSpan.FromMinutes(20), _token);
                     await GoToBourseAsync(TimeSpan.FromSeconds(10), _token);
-                    await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _token);
+                    await ScrollAndClickOnItemAsync(BourseItem.Carte, TimeSpan.FromSeconds(30), _token);
                     await WaitForReward(TimeSpan.FromSeconds(60), _token);
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
                 }

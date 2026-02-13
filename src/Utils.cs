@@ -201,9 +201,10 @@ namespace NonogramAutomation
             Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Swiping to bottom");
 
             AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbInstance.AdbClient.GetFrameBufferAsync(adbInstance.DeviceData);
-            int height = (int)framebuffer.Header.Height;
-            int width = (int)framebuffer.Header.Width;
-            await SwipeAsync(adbInstance, new System.Drawing.Point(width / 2, height - 100), new System.Drawing.Point(width / 2, 100), 2000, token);
+            int x = (int)(framebuffer.Header.Width * 0.5);
+            int yBottom = (int)(framebuffer.Header.Height * 0.80);
+            int yTop = (int)(framebuffer.Header.Height * 0.20);
+            await SwipeAsync(adbInstance, new System.Drawing.Point(x, yBottom), new System.Drawing.Point(x, yTop), 2000, token);
         }
 
         public static async Task<System.Xml.XmlDocument?> DumpXMLAsync(ADBInstance adbInstance, CancellationToken token)
