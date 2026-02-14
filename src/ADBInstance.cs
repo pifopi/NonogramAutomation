@@ -1,4 +1,6 @@
-﻿namespace NonogramAutomation
+﻿using AdvancedSharpAdbClient.DeviceCommands;
+
+namespace NonogramAutomation
 {
     public abstract class ADBInstance : System.ComponentModel.INotifyPropertyChanged
     {
@@ -82,8 +84,24 @@
             Status = InstanceStatus.Stopping;
         }
 
+        public abstract Task StartEmulator(CancellationToken token);
+
+        public abstract Task StopEmulator();
+
         public abstract Task ConnectToInstanceAsync(CancellationToken token);
 
-        protected abstract Task DisconnectFromInstanceAsync();
+        public abstract Task DisconnectFromInstanceAsync();
+
+        public async Task StartApplicationAsync(CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
+            await AdbClient.StartAppAsync(DeviceData, "com.ucdevs.jcross", token);
+        }
+
+        public async Task StopApplicationAsync()
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
+            await AdbClient.StopAppAsync(DeviceData, "com.ucdevs.jcross");
+        }
     }
 }

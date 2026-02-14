@@ -30,7 +30,7 @@
             DeviceData = await Utils.GetDeviceDataFromAsync(AdbClient, $"{IP}:{Port}", TimeSpan.FromMinutes(1), token);
         }
 
-        protected override async Task DisconnectFromInstanceAsync()
+        public override async Task DisconnectFromInstanceAsync()
         {
             try
             {

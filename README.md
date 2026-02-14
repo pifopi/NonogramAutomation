@@ -1,10 +1,8 @@
 TODO list
 
 BOURSE
-- automate bourse avec reboot
-- fichier de configuration
-    - item bourse
-    - wait avant ou après farm
+- add a config file for item
+- hide console command
 - detect reward screen
 
 FARM

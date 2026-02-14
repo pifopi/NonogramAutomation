@@ -21,24 +21,23 @@ namespace NonogramAutomation
             {
                 try
                 {
-                    await _adbInstance.ConnectToInstanceAsync(_token);
+                    await using UndoActions undoActions = new();
 
-                    await Task.Delay(TimeSpan.FromMinutes(20), _token);
-                    while (true)
-                    {
-                        await GoToBourseAsync(TimeSpan.FromSeconds(10), _token);
-                        await ScrollAndClickOnItemAsync(BourseItem.TreasureMap, TimeSpan.FromSeconds(30), _token);
-                        bool isSuccessful = await WaitForRewardAsync(TimeSpan.FromSeconds(60), _token);
-                        if (isSuccessful)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
-                        }
-                    }
-                    await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
+                    await _adbInstance.StartEmulator(_token);
+                    undoActions.Add(async () => await _adbInstance.StopEmulator());
+
+                    await _adbInstance.ConnectToInstanceAsync(_token);
+                    undoActions.Add(async () => await _adbInstance.DisconnectFromInstanceAsync());
+
+                    await _adbInstance.StartApplicationAsync(_token);
+                    undoActions.Add(async () => await _adbInstance.StopApplicationAsync());
+
+                    await ClickOnGuildAsync(TimeSpan.FromMinutes(25), _token);
+                    undoActions.Add(async () => await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token));
+
+                    await ClickOnBourseAsync(TimeSpan.FromSeconds(10), _token);
+                    await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _token);
+                    await WaitForRewardAsync(TimeSpan.FromSeconds(60), _token);
                 }
                 catch (Exception exception)
                 {
@@ -47,7 +46,30 @@ namespace NonogramAutomation
             }
         }
 
-        private async Task GoToBourseAsync(TimeSpan timeout, CancellationToken token)
+        private async Task ClickOnGuildAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            while (true)
+            {
+                AdvancedSharpAdbClient.DeviceCommands.Models.Element? guildButton = await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", TimeSpan.FromSeconds(2), token);
+                if (guildButton is not null)
+                {
+                    await guildButton.ClickAsync(token);
+                    break;
+                }
+
+                bool isErrorMessage = await Utils.DetectElementAsync(_adbInstance, "//node[@text='Warning: Guild last saved progress is not accessible, loaded from previous slot.']", timeout, token);
+                if (isErrorMessage)
+                {
+                    await Utils.ClickBackButtonAsync(_adbInstance, token);
+                    Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}>  Error message detected");
+                    await Task.Delay(TimeSpan.FromMinutes(20), token);
+                }
+            }
+        }
+
+        private async Task ClickOnBourseAsync(TimeSpan timeout, CancellationToken token)
         {
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
@@ -89,7 +111,7 @@ namespace NonogramAutomation
             }
         }
 
-        private async Task<bool> WaitForRewardAsync(TimeSpan timeout, CancellationToken parentToken)
+        private async Task WaitForRewardAsync(TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
@@ -98,13 +120,12 @@ namespace NonogramAutomation
 
             if (await Utils.DetectElementAsync(_adbInstance, "//node[@resource-id='contain-paidtasks-survey']", TimeSpan.FromSeconds(2), linkedCts.Token))
             {
-                return false;
+                throw new Exception("Survey detected, cannot continue");
             }
 
             await Task.Delay(TimeSpan.FromSeconds(40), linkedCts.Token);
 
             await Utils.DumpAllAsync(_adbInstance, "Rewards", false, linkedCts.Token);
-            return true;
         }
 
         private async Task ReturnToMainMenuAsync(TimeSpan timeout, CancellationToken parentToken)
@@ -120,20 +141,27 @@ namespace NonogramAutomation
 
                 await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
                 await Task.Delay(TimeSpan.FromSeconds(1), linkedCts.Token);
-                bool isOnMainMenu = await Utils.DetectElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/catBourse']", TimeSpan.FromSeconds(2), linkedCts.Token);
+                bool isOnMainMenu = await Utils.DetectElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", TimeSpan.FromSeconds(2), linkedCts.Token);
                 if (isOnMainMenu)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Back to main menu");
                     return;
                 }
-
-                AdvancedSharpAdbClient.DeviceCommands.Models.Element? surveyIgnorePopup = await Utils.FindElementAsync(_adbInstance, "//node[@text='Ignorer']", TimeSpan.FromSeconds(2), linkedCts.Token);
-                if (surveyIgnorePopup is not null)
-                {
-                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Survey popup, ignoring");
-
-                }
             }
+        }
+
+        private async Task ClickOnUserAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/userBtn']", timeout, token);
+        }
+
+        private async Task ClickOnSyncNow(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnSyncNow']", timeout, token);
         }
     }
 }
