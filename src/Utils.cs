@@ -136,9 +136,14 @@ namespace NonogramAutomation
             return Tesseract.Pix.LoadFromMemory(stream);
         }
 
-        public static async Task<AdvancedSharpAdbClient.DeviceCommands.Models.Element?> FindElementAsync(ADBInstance adbInstance, string query, CancellationToken token)
+        public static async Task<AdvancedSharpAdbClient.DeviceCommands.Models.Element?> FindElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken parentToken)
         {
-            return await adbInstance.AdbClient.FindElementAsync(adbInstance.DeviceData, query, token);
+            using var timeoutCts = new CancellationTokenSource(timeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
+
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Find {query}");
+
+            return await adbInstance.AdbClient.FindElementAsync(adbInstance.DeviceData, query, linkedCts.Token);
         }
 
         public static async Task<bool> DetectElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken parentToken)
@@ -146,7 +151,9 @@ namespace NonogramAutomation
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, linkedCts.Token);
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Detect {query}");
+
+            AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
             if (element is null)
             {
                 Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Element {query} not found");
@@ -171,7 +178,7 @@ namespace NonogramAutomation
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, linkedCts.Token);
+                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
                 if (element != null)
                 {
                     Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Clicking on {query}");

@@ -9,8 +9,8 @@ namespace NonogramAutomation
 
         private enum BourseItem
         {
-            Carte,
-            Café,
+            TreasureMap,
+            Coffee,
             Katana,
             Potion
         }
@@ -24,9 +24,20 @@ namespace NonogramAutomation
                     await _adbInstance.ConnectToInstanceAsync(_token);
 
                     await Task.Delay(TimeSpan.FromMinutes(20), _token);
-                    await GoToBourseAsync(TimeSpan.FromSeconds(10), _token);
-                    await ScrollAndClickOnItemAsync(BourseItem.Carte, TimeSpan.FromSeconds(30), _token);
-                    await WaitForReward(TimeSpan.FromSeconds(60), _token);
+                    while (true)
+                    {
+                        await GoToBourseAsync(TimeSpan.FromSeconds(10), _token);
+                        await ScrollAndClickOnItemAsync(BourseItem.TreasureMap, TimeSpan.FromSeconds(30), _token);
+                        bool isSuccessful = await WaitForRewardAsync(TimeSpan.FromSeconds(60), _token);
+                        if (isSuccessful)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
+                        }
+                    }
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
                 }
                 catch (Exception exception)
@@ -52,8 +63,8 @@ namespace NonogramAutomation
 
             string itemAsString = item switch
             {
-                BourseItem.Carte => "Fragment",
-                BourseItem.Café => "Grains",
+                BourseItem.TreasureMap => "Fragment",
+                BourseItem.Coffee => "Grains",
                 BourseItem.Katana => "Katana",
                 BourseItem.Potion => "Potion",
                 _ => throw new NotImplementedException()
@@ -64,10 +75,7 @@ namespace NonogramAutomation
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                using var searchTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                using var searchLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(linkedCts.Token, searchTimeoutCts.Token);
-
-                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await Utils.FindElementAsync(_adbInstance, query, searchLinkedCts.Token);
+                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
                 if (element is not null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
@@ -81,16 +89,22 @@ namespace NonogramAutomation
             }
         }
 
-        private async Task WaitForReward(TimeSpan timeout, CancellationToken parentToken)
+        private async Task<bool> WaitForRewardAsync(TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
-            await Task.Delay(TimeSpan.FromSeconds(45), linkedCts.Token);
+            if (await Utils.DetectElementAsync(_adbInstance, "//node[@resource-id='contain-paidtasks-survey']", TimeSpan.FromSeconds(2), linkedCts.Token))
+            {
+                return false;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(40), linkedCts.Token);
 
             await Utils.DumpAllAsync(_adbInstance, "Rewards", false, linkedCts.Token);
+            return true;
         }
 
         private async Task ReturnToMainMenuAsync(TimeSpan timeout, CancellationToken parentToken)
@@ -111,6 +125,13 @@ namespace NonogramAutomation
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Back to main menu");
                     return;
+                }
+
+                AdvancedSharpAdbClient.DeviceCommands.Models.Element? surveyIgnorePopup = await Utils.FindElementAsync(_adbInstance, "//node[@text='Ignorer']", TimeSpan.FromSeconds(2), linkedCts.Token);
+                if (surveyIgnorePopup is not null)
+                {
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Survey popup, ignoring");
+
                 }
             }
         }

@@ -22,7 +22,7 @@ namespace NonogramAutomation
                 {
                     using var searchTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                     using var searchLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(_token, searchTimeoutCts.Token);
-                    AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await Utils.FindElementAsync(_adbInstance, query, searchLinkedCts.Token);
+                    AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), searchLinkedCts.Token);
                     if (element is null)
                     {
                         Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"No download button found, scrolling");
