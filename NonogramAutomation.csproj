@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <!-- Data -->
-    <None Update="Assets\*">
+    <None Update="assets\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <!-- Configuration Files -->
