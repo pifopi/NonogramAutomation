@@ -12,6 +12,5 @@ namespace NonogramAutomation
         }
 
         public abstract Task StartAsync();
-
     }
 }

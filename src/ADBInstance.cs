@@ -69,7 +69,6 @@ namespace NonogramAutomation
             {
                 ProgramType.Dump => new ProgramDump(this, _programCts.Token),
                 ProgramType.Bourse => new ProgramBourse(this, _programCts.Token),
-                ProgramType.Favorites => new ProgramFavorite(this, _programCts.Token),
                 ProgramType.Download => new ProgramDownload(this, _programCts.Token),
                 _ => throw new NotImplementedException()
             };

@@ -48,8 +48,8 @@
                         break;
                     }
                 }
-
             }
+            await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
         public override async Task StopEmulator()

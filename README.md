@@ -12,8 +12,5 @@ FARM
 - automate train
 - ...
 
-HIGH XP PUZZLE
-- add a csv management for high xp puzzles
-
 GENERAL
 - add a notification system

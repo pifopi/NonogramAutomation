@@ -5,6 +5,5 @@
         Bourse,
         Download,
         Dump,
-        Favorites,
     }
 }
