@@ -153,7 +153,10 @@ namespace NonogramAutomation
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Find {queries}");
+            foreach (string query in queries)
+            {
+                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Find {query}");
+            }
 
             try
             {
@@ -198,6 +201,7 @@ namespace NonogramAutomation
             }
             return null;
         }
+
         public static async Task<FoundElement?> FindElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken token)
         {
             return await FindElementAsync(adbInstance, new List<string> { query }, timeout, token);
@@ -208,7 +212,10 @@ namespace NonogramAutomation
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Searching for {queries}");
+            foreach (string query in queries)
+            {
+                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Searching for {query}");
+            }
 
             while (true)
             {
