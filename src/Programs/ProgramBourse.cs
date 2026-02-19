@@ -32,7 +32,37 @@ namespace NonogramAutomation
                     await _adbInstance.StartApplicationAsync(_token);
                     undoActions.Add(async () => await _adbInstance.StopApplicationAsync());
 
-                    await ClickOnGuildAsync(TimeSpan.FromMinutes(2), _token);
+                    List<string> mainMenuQueries = new()
+                    {
+                        "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']",
+                        "//node[@text='Warning: Guild last saved progress is not accessible, loaded from previous slot.']",
+                        "//node[@text='Warning: Guild saved progress is not accessible']"
+                    };
+                    FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", TimeSpan.FromSeconds(30), _token);
+                    if (foundElement is null)
+                    {
+                        throw new Exception("Main menu not found");
+                    }
+                    switch (foundElement.Index)
+                    {
+                        case 0:
+                            Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Main menu found");
+                            break;
+                        case 1:
+                            Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Guild saved progress lost (low severity)");
+                            await LoadBackupAsync();
+                            break;
+                        case 2:
+                            Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Guild saved progress lost (high severity)");
+                            await LoadBackupAsync();
+                            await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
+                            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
+                            await LoadBackupAsync();
+                            break;
+                        default:
+                            throw new Exception("Unexpected element index");
+                    }
+                    await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnBourseAsync(TimeSpan.FromSeconds(10), _token);
                     await ScrollAndClickOnItemAsync(BourseItem.Katana, TimeSpan.FromSeconds(30), _token);
                     await WaitForRewardAsync(TimeSpan.FromSeconds(60), _token);
@@ -41,10 +71,9 @@ namespace NonogramAutomation
                     await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnSaveZipAsync(TimeSpan.FromSeconds(10), _token);
-                    System.IO.File.Delete("C:\\Users\\dotte\\Downloads\\NonogramsKatana.zip");
-                    System.IO.File.Move("C:\\Users\\dotte\\Documents\\MuMuSharedFolder\\NonogramsKatana.zip", "C:\\Users\\dotte\\Downloads\\NonogramsKatana.zip");
+                    MoveSaveFile();
                     await ClickOnSaveAsync(TimeSpan.FromSeconds(10), _token);
-                    await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
+                    await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
                 }
                 catch (Exception exception)
                 {
@@ -53,30 +82,21 @@ namespace NonogramAutomation
             }
         }
 
+        private async Task LoadBackupAsync()
+        {
+            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
+            await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
+            await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
+            await ClickOnLoadZipAsync(TimeSpan.FromSeconds(10), _token);
+            await ClickOnLoadAsync(TimeSpan.FromSeconds(10), _token);
+            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
+        }
+
         private async Task ClickOnGuildAsync(TimeSpan timeout, CancellationToken token)
         {
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
-            await Task.Delay(TimeSpan.FromSeconds(5), token);
-            AdvancedSharpAdbClient.DeviceCommands.Models.Element? guildButton = await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", TimeSpan.FromSeconds(2), token);
-            if (guildButton is not null)
-            {
-                await guildButton.ClickAsync(token);
-                return;
-            }
-
-            bool isErrorMessage = await Utils.DetectElementAsync(_adbInstance, "//node[@text='Warning: Guild last saved progress is not accessible, loaded from previous slot.']", timeout, token);
-            if (isErrorMessage)
-            {
-                await Utils.ClickBackButtonAsync(_adbInstance, token);
-                await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), token);
-                await ClickOnOtherAsync(TimeSpan.FromSeconds(10), token);
-                await ClickOnLoadZipAsync(TimeSpan.FromSeconds(10), token);
-                await ClickOnLoadAsync(TimeSpan.FromSeconds(10), token);
-                await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
-                await ClickOnGuildAsync(TimeSpan.FromSeconds(30), token);
-                return;
-            }
+            await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", timeout, token);
         }
 
         private async Task ClickOnSettingsAsync(TimeSpan timeout, CancellationToken token)
@@ -114,6 +134,15 @@ namespace NonogramAutomation
             await Utils.ClickElementAsync(_adbInstance, "//node[@text='Sauvegarder la progression dans le fichier (zip)']", timeout, token);
         }
 
+        private void MoveSaveFile()
+        {
+            string folder = @"C:\Users\dotte\Documents\MuMuSharedFolder";
+            string sourceFilename = System.IO.Path.Combine(folder, "NonogramsKatana.zip");
+            string destinationFilename = System.IO.Path.Combine(folder, $"SavedBackup_{DateTime.Now:yyyyMMdd_HHmmss}.zip");
+            Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Moving save file from {sourceFilename} to {destinationFilename}");
+            System.IO.File.Move(sourceFilename, destinationFilename);
+        }
+
         private async Task ClickOnSaveAsync(TimeSpan timeout, CancellationToken token)
         {
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
@@ -149,11 +178,11 @@ namespace NonogramAutomation
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
-                if (element is not null)
+                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
+                if (foundElement is not null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
-                    await element.ClickAsync(linkedCts.Token);
+                    await foundElement.Element.ClickAsync(linkedCts.Token);
                     await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
                     return;
                 }
@@ -172,7 +201,7 @@ namespace NonogramAutomation
 
             await Task.Delay(TimeSpan.FromSeconds(5), linkedCts.Token);
 
-            if (await Utils.DetectElementAsync(_adbInstance, "//node[@resource-id='contain-paidtasks-survey']", TimeSpan.FromSeconds(2), linkedCts.Token))
+            if (await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='contain-paidtasks-survey']", TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
             {
                 throw new Exception("Survey detected, cannot continue");
             }
@@ -189,33 +218,20 @@ namespace NonogramAutomation
 
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
+            string query = "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']";
+
             while (true)
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
                 await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
                 await Task.Delay(TimeSpan.FromSeconds(1), linkedCts.Token);
-                bool isOnMainMenu = await Utils.DetectElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", TimeSpan.FromSeconds(2), linkedCts.Token);
-                if (isOnMainMenu)
+                if (await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Back to main menu");
                     return;
                 }
             }
-        }
-
-        private async Task ClickOnUserAsync(TimeSpan timeout, CancellationToken token)
-        {
-            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
-
-            await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/userBtn']", timeout, token);
-        }
-
-        private async Task ClickOnSyncNow(TimeSpan timeout, CancellationToken token)
-        {
-            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
-
-            await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnSyncNow']", timeout, token);
         }
     }
 }

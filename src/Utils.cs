@@ -148,57 +148,86 @@ namespace NonogramAutomation
             return Tesseract.Pix.LoadFromMemory(stream);
         }
 
-        public static async Task<AdvancedSharpAdbClient.DeviceCommands.Models.Element?> FindElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken parentToken)
+        public static async Task<FoundElement?> FindElementAsync(ADBInstance adbInstance, List<string> queries, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Find {query}");
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Find {queries}");
 
-            return await adbInstance.AdbClient.FindElementAsync(adbInstance.DeviceData, query, linkedCts.Token);
+            try
+            {
+                while (!linkedCts.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        System.Xml.XmlDocument? doc = await DumpXMLAsync(adbInstance, linkedCts.Token);
+                        if (doc != null)
+                        {
+                            foreach (string query in queries)
+                            {
+                                System.Xml.XmlNode? xmlNode = doc.SelectSingleNode(query);
+                                if (xmlNode != null)
+                                {
+                                    AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = AdvancedSharpAdbClient.DeviceCommands.Models.Element.FromXmlNode(adbInstance.AdbClient, adbInstance.DeviceData, xmlNode);
+                                    if (element != null)
+                                    {
+                                        Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Element {query} found");
+                                        return new FoundElement(queries.IndexOf(query), query, element);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (System.Xml.XmlException)
+                    {
+                        // Ignore XmlException and try again
+                    }
+                    if (linkedCts.Token == default) { break; }
+                }
+            }
+            catch (Exception e)
+            {
+                // If a cancellation was requested, this main loop is interrupted with an exception
+                // because the socket is closed. In that case, we don't need to throw a ShellCommandUnresponsiveException.
+                // In all other cases, something went wrong, and we want to report it to the user.
+                if (!linkedCts.Token.IsCancellationRequested)
+                {
+                    throw new AdvancedSharpAdbClient.Exceptions.ShellCommandUnresponsiveException(e);
+                }
+            }
+            return null;
+        }
+        public static async Task<FoundElement?> FindElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken token)
+        {
+            return await FindElementAsync(adbInstance, new List<string> { query }, timeout, token);
         }
 
-        public static async Task<bool> DetectElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken parentToken)
+        public static async Task ClickElementAsync(ADBInstance adbInstance, List<string> queries, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Detect {query}");
-
-            AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
-            if (element is null)
-            {
-                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Element {query} not found");
-                return false;
-
-            }
-            else
-            {
-                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Element {query} found");
-                return true;
-            }
-        }
-
-        public static async Task ClickElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken parentToken)
-        {
-            using var timeoutCts = new CancellationTokenSource(timeout);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
-
-            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Searching for {query}");
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Searching for {queries}");
 
             while (true)
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = await FindElementAsync(adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
-                if (element != null)
+                FoundElement? foundElement = await FindElementAsync(adbInstance, queries, TimeSpan.FromSeconds(2), linkedCts.Token);
+                if (foundElement != null)
                 {
-                    Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Clicking on {query}");
-                    await element.ClickAsync(linkedCts.Token);
+                    Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Clicking on {foundElement.Query}");
+                    await foundElement.Element.ClickAsync(linkedCts.Token);
                     await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
                     return;
                 }
             }
+        }
+
+        public static async Task ClickElementAsync(ADBInstance adbInstance, string query, TimeSpan timeout, CancellationToken token)
+        {
+            await ClickElementAsync(adbInstance, new List<string> { query }, timeout, token);
         }
 
         public static async Task ClickBackButtonAsync(ADBInstance adbInstance, CancellationToken token)
