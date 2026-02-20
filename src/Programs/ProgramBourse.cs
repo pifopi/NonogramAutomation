@@ -209,7 +209,7 @@ namespace NonogramAutomation
             {
                 "//node[@class='android.view.View']",
                 "//node[@resource-id='contain-paidtasks-survey']",
-                "//node[@text='Pas d'espace disponible dans l'entrep�t']"
+                "//node[@text='Pas d'espace disponible dans l'entrepôt']"
             };
 
             FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(10), linkedCts.Token);
