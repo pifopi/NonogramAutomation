@@ -38,7 +38,7 @@ namespace NonogramAutomation
                         "//node[@text='Warning: Guild last saved progress is not accessible, loaded from previous slot.']",
                         "//node[@text='Warning: Guild saved progress is not accessible']"
                     };
-                    FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", TimeSpan.FromSeconds(30), _token);
+                    FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, mainMenuQueries, TimeSpan.FromSeconds(10), _token);
                     if (foundElement is null)
                     {
                         throw new Exception("Main menu not found");
