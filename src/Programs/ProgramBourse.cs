@@ -176,23 +176,35 @@ namespace NonogramAutomation
                 BourseItem.Potion => "Potion",
                 _ => throw new NotImplementedException()
             };
-            string query = $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]";
-
+            List<string> queries = new()
+            {
+                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]",
+                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and string-length(@text) = 4 and substring(@text, 2, 1) = ':']"
+            };
             while (true)
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token);
-                if (foundElement is not null)
+                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(2), linkedCts.Token);
+                if (foundElement is null)
                 {
-                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
-                    await foundElement.Element.ClickAsync(linkedCts.Token);
-                    await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-                    return;
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Scrolling to find {item}");
+                    await Utils.SwipeToBottomAsync(_adbInstance, linkedCts.Token);
+                    continue;
                 }
 
-                Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Scrolling to find {item}");
-                await Utils.SwipeToBottomAsync(_adbInstance, linkedCts.Token);
+                switch (foundElement.Index)
+                {
+                    case 0:
+                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
+                        await foundElement.Element.ClickAsync(linkedCts.Token);
+                        await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
+                        break;
+                    case 1:
+                        throw new Exception("Bourse timer is not ready");
+                    default:
+                        throw new Exception("Unexpected element index");
+                }
             }
         }
 
