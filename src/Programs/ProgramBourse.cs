@@ -199,7 +199,7 @@ namespace NonogramAutomation
                         Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
                         await foundElement.Element.ClickAsync(linkedCts.Token);
                         await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-                        break;
+                        return;
                     case 1:
                         throw new Exception("Bourse timer is not ready");
                     default:
