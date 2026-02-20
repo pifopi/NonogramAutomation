@@ -50,10 +50,12 @@ namespace NonogramAutomation
                             break;
                         case 1:
                             Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Guild saved progress lost (low severity)");
+                            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
                             await LoadBackupAsync();
                             break;
                         case 2:
                             Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Guild saved progress lost (high severity)");
+                            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
                             await LoadBackupAsync();
                             await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
                             await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
@@ -84,7 +86,6 @@ namespace NonogramAutomation
 
         private async Task LoadBackupAsync()
         {
-            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnLoadZipAsync(TimeSpan.FromSeconds(10), _token);
@@ -224,13 +225,12 @@ namespace NonogramAutomation
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
-                await Task.Delay(TimeSpan.FromSeconds(1), linkedCts.Token);
                 if (await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Back to main menu");
                     return;
                 }
+                await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
             }
         }
     }
