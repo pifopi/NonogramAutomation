@@ -3,7 +3,6 @@ TODO list
 BOURSE
 - add a config file for item
 - hide console command
-- detect reward screen
 
 FARM
 - automate workshop

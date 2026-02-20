@@ -92,6 +92,7 @@ namespace NonogramAutomation
             await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnLoadZipAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnLoadAsync(TimeSpan.FromSeconds(10), _token);
+            await Utils.DumpAllAsync(_adbInstance, "Saved", false, _token);
             await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
         }
 
@@ -204,14 +205,39 @@ namespace NonogramAutomation
 
             await Task.Delay(TimeSpan.FromSeconds(5), linkedCts.Token);
 
-            if (await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='contain-paidtasks-survey']", TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
+            List<string> queries = new()
+            {
+                "//node[@class='android.view.View']",
+                "//node[@resource-id='contain-paidtasks-survey']",
+                "//node[@text='Pas d'espace disponible dans l'entrep�t']"
+            };
+
+            FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(10), linkedCts.Token);
+            if (foundElement is null)
+            {
+                await Utils.DumpAllAsync(_adbInstance, "NoAds", false, linkedCts.Token);
+                throw new Exception("No ad was loaded after 10s");
+            }
+            switch (foundElement.Index)
+            {
+                case 0:
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Ad loaded properly");
+                    break;
+                case 1:
+                    throw new Exception("Survey detected, cannot continue");
+                case 2:
+                    throw new Exception("No room for storage, program will stop");
+                    break;
+                default:
+                    throw new Exception("Unexpected element index");
+            }
+            if (await Utils.FindElementAsync(_adbInstance, TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
             {
                 throw new Exception("Survey detected, cannot continue");
             }
 
             await Task.Delay(TimeSpan.FromSeconds(30), linkedCts.Token);
 
-            await Utils.DumpAllAsync(_adbInstance, "Rewards", false, linkedCts.Token);
         }
 
         private async Task ReturnToMainMenuAsync(TimeSpan timeout, CancellationToken parentToken)
