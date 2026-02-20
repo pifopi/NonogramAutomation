@@ -224,16 +224,11 @@ namespace NonogramAutomation
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Ad loaded properly");
                     break;
                 case 1:
-                    throw new Exception("Survey detected, cannot continue");
+                    throw new Exception("Survey detected");
                 case 2:
-                    throw new Exception("No room for storage, program will stop");
-                    break;
+                    throw new Exception("No room for storage");
                 default:
                     throw new Exception("Unexpected element index");
-            }
-            if (await Utils.FindElementAsync(_adbInstance, TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
-            {
-                throw new Exception("Survey detected, cannot continue");
             }
 
             await Task.Delay(TimeSpan.FromSeconds(30), linkedCts.Token);
