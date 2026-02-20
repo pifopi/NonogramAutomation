@@ -264,7 +264,7 @@ namespace NonogramAutomation
 
         public static async Task<System.Xml.XmlDocument?> DumpXMLAsync(ADBInstance adbInstance, CancellationToken token)
         {
-            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Dumping screen");
+            Logger.Log(Logger.LogLevel.Debug, adbInstance.LogHeader, "Dumping screen");
 
             return await adbInstance.AdbClient.DumpScreenAsync(adbInstance.DeviceData, token);
         }

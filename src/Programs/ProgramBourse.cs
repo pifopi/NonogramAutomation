@@ -225,6 +225,7 @@ namespace NonogramAutomation
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 if (await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Back to main menu");
