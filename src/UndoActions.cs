@@ -11,6 +11,8 @@
 
         public async ValueTask DisposeAsync()
         {
+            Logger.Log(Logger.LogLevel.Info, "UndoActions", $"Starting to execute {_undoActions.Count} undo actions");
+
             _undoActions.Reverse();
             foreach (var disposeAsync in _undoActions)
             {
