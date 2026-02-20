@@ -105,7 +105,7 @@ namespace NonogramAutomation
             return Extract(image, rectangle);
         }
 
-        private static bool IsBetween(double value, double min, double max)
+        public static bool IsBetween(double value, double min, double max)
         {
             return value >= min && value <= max;
         }

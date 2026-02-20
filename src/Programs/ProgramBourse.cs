@@ -176,11 +176,16 @@ namespace NonogramAutomation
                 BourseItem.Potion => "Potion",
                 _ => throw new NotImplementedException()
             };
+
             List<string> queries = new()
             {
-                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]",
-                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and string-length(@text) = 4 and substring(@text, 2, 1) = ':']"
+                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]"
             };
+            for (int i = 20; i > 0; i++)
+            {
+                queries.Add($"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='0:{i:D2}']]");
+            }
+
             while (true)
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
@@ -193,17 +198,19 @@ namespace NonogramAutomation
                     continue;
                 }
 
-                switch (foundElement.Index)
+                if (foundElement.Index == 0)
                 {
-                    case 0:
-                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
-                        await foundElement.Element.ClickAsync(linkedCts.Token);
-                        await Task.Delay(TimeSpan.FromMilliseconds(100), linkedCts.Token);
-                        return;
-                    case 1:
-                        throw new Exception("Bourse timer is not ready");
-                    default:
-                        throw new Exception("Unexpected element index");
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
+                    await foundElement.Element.ClickAsync(linkedCts.Token);
+                    return;
+                }
+                else if (foundElement.Index >= 1 && foundElement.Index <= 20)
+                {
+                    throw new Exception("Bourse timer is not ready");
+                }
+                else
+                {
+                    throw new Exception("Unexpected element index");
                 }
             }
         }
@@ -221,7 +228,7 @@ namespace NonogramAutomation
             {
                 "//node[@class='android.view.View']",
                 "//node[@resource-id='contain-paidtasks-survey']",
-                "//node[@text='Pas d'espace disponible dans l'entrepôt']"
+                "//node[@text=\"Pas d'espace disponible dans l'entrepôt\"]"
             };
 
             FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(10), linkedCts.Token);
