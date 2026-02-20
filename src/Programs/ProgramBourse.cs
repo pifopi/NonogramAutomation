@@ -17,6 +17,8 @@ namespace NonogramAutomation
 
         public override async Task StartAsync()
         {
+            BourseItem item = BourseItem.Katana;
+
             while (true)
             {
                 try
@@ -66,7 +68,7 @@ namespace NonogramAutomation
                     }
                     await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnBourseAsync(TimeSpan.FromSeconds(10), _token);
-                    await ScrollAndClickOnItemAsync(BourseItem.TreasureMap, TimeSpan.FromSeconds(30), _token);
+                    await ScrollAndClickOnItemAsync(item, TimeSpan.FromSeconds(30), _token);
                     await WaitForRewardAsync(TimeSpan.FromSeconds(60), _token);
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
