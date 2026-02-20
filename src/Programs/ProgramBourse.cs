@@ -69,7 +69,7 @@ namespace NonogramAutomation
                     await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnBourseAsync(TimeSpan.FromSeconds(10), _token);
                     await ScrollAndClickOnItemAsync(item, TimeSpan.FromSeconds(30), _token);
-                    await WaitForRewardAsync(TimeSpan.FromSeconds(60), _token);
+                    await WaitForRewardAsync(TimeSpan.FromSeconds(80), _token);
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
                     await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
@@ -181,7 +181,7 @@ namespace NonogramAutomation
             {
                 $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]"
             };
-            for (int i = 20; i > 0; i++)
+            for (int i = 20; i > 0; i--)
             {
                 queries.Add($"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='0:{i:D2}']]");
             }
@@ -222,8 +222,6 @@ namespace NonogramAutomation
 
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
-            await Task.Delay(TimeSpan.FromSeconds(5), linkedCts.Token);
-
             List<string> queries = new()
             {
                 "//node[@class='android.view.View']",
@@ -231,7 +229,7 @@ namespace NonogramAutomation
                 "//node[@text=\"Pas d'espace disponible dans l'entrepôt\"]"
             };
 
-            FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(10), linkedCts.Token);
+            FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(30), linkedCts.Token);
             if (foundElement is null)
             {
                 await Utils.DumpAllAsync(_adbInstance, "NoAds", false, linkedCts.Token);
