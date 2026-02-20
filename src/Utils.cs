@@ -155,7 +155,7 @@ namespace NonogramAutomation
 
             foreach (string query in queries)
             {
-                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Find {query}");
+                Logger.Log(Logger.LogLevel.Debug, adbInstance.LogHeader, $"Find {query}");
             }
 
             try
@@ -175,7 +175,7 @@ namespace NonogramAutomation
                                     AdvancedSharpAdbClient.DeviceCommands.Models.Element? element = AdvancedSharpAdbClient.DeviceCommands.Models.Element.FromXmlNode(adbInstance.AdbClient, adbInstance.DeviceData, xmlNode);
                                     if (element != null)
                                     {
-                                        Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Element {query} found");
+                                        Logger.Log(Logger.LogLevel.Debug, adbInstance.LogHeader, $"Element {query} found");
                                         return new FoundElement(queries.IndexOf(query), query, element);
                                     }
                                 }
@@ -214,7 +214,7 @@ namespace NonogramAutomation
 
             foreach (string query in queries)
             {
-                Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, $"Searching for {query}");
+                Logger.Log(Logger.LogLevel.Debug, adbInstance.LogHeader, $"Searching for {query}");
             }
 
             while (true)
