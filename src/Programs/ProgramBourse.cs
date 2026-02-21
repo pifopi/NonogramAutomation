@@ -53,15 +53,12 @@ namespace NonogramAutomation
                         case 1:
                             Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Guild saved progress lost (low severity)");
                             await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
-                            await LoadBackupAsync();
+                            await LoadBackupAsync(withEmptySave: false);
                             break;
                         case 2:
                             Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Guild saved progress lost (high severity)");
                             await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
-                            await LoadBackupAsync();
-                            await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
-                            await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
-                            await LoadBackupAsync();
+                            await LoadBackupAsync(withEmptySave: true);
                             break;
                         default:
                             throw new Exception("Unexpected element index");
@@ -86,12 +83,16 @@ namespace NonogramAutomation
             }
         }
 
-        private async Task LoadBackupAsync()
+        private async Task LoadBackupAsync(bool withEmptySave)
         {
             await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnLoadZipAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnLoadAsync(TimeSpan.FromSeconds(10), _token);
+            if (withEmptySave)
+            {
+                await ClickOnOKAsync(TimeSpan.FromSeconds(10), _token);
+            }
             await Utils.DumpAllAsync(_adbInstance, "Saved", false, _token);
             await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
         }
@@ -129,6 +130,13 @@ namespace NonogramAutomation
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
             await Utils.ClickElementAsync(_adbInstance, "//node[@text='NonogramsKatana.zip']", timeout, token);
+        }
+
+        private async Task ClickOnOKAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@text='OK']", timeout, token);
         }
 
         private async Task ClickOnSaveZipAsync(TimeSpan timeout, CancellationToken token)
