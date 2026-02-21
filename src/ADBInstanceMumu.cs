@@ -49,14 +49,14 @@
                     }
                 }
             }
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(5));
         }
 
         public override async Task StopEmulator()
         {
             using LogContext logContext = new(Logger.LogLevel.Info, LogHeader);
             Utils.ExecuteCmd("taskkill", "/IM MuMuNxDevice.exe /F");
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(5));
         }
 
         protected override int GetPort()
