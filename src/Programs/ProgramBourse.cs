@@ -276,14 +276,12 @@ namespace NonogramAutomation
 
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
-            string query = "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']";
-
             while (true)
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
-                if (await Utils.FindElementAsync(_adbInstance, query, TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
+                if (await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnGuild']", TimeSpan.FromSeconds(2), linkedCts.Token) is not null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Back to main menu");
                     return;
