@@ -69,11 +69,7 @@ namespace NonogramAutomation
                     await WaitForRewardAsync(TimeSpan.FromSeconds(80), _token);
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
-                    await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
-                    await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
-                    await ClickOnSaveZipAsync(TimeSpan.FromSeconds(10), _token);
-                    MoveSaveFile();
-                    await ClickOnSaveAsync(TimeSpan.FromSeconds(10), _token);
+                    await SaveBackupAsync();
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
                 }
                 catch (NoRoomForStorageException exception)
@@ -98,8 +94,16 @@ namespace NonogramAutomation
             {
                 await ClickOnOKAsync(TimeSpan.FromSeconds(10), _token);
             }
-            await Utils.DumpAllAsync(_adbInstance, "Saved", false, _token);
             await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
+        }
+
+        private async Task SaveBackupAsync()
+        {
+            await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
+            await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
+            await ClickOnSaveZipAsync(TimeSpan.FromSeconds(10), _token);
+            MoveSaveFile();
+            await ClickOnSaveAsync(TimeSpan.FromSeconds(10), _token);
         }
 
         private async Task ClickOnGuildAsync(TimeSpan timeout, CancellationToken token)
