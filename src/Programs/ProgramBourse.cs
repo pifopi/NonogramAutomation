@@ -116,7 +116,8 @@ namespace NonogramAutomation
 
             await ClickOnSaveAsync(TimeSpan.FromSeconds(10), _token);
 
-            string backupFilename = System.IO.Path.Combine(folder, "NonogramsKatanaBackups", $"{DateTime.Now:yyyyMMdd_HHmmss}_{itemFarmCount++}.zip");
+            itemFarmCount++;
+            string backupFilename = System.IO.Path.Combine(folder, "NonogramsKatanaBackups", $"{DateTime.Now:yyyyMMdd_HHmmss}_{itemFarmCount}.zip");
             System.IO.File.Copy(saveFilename, backupFilename);
 
             Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"New backup saved in {backupFilename}");
