@@ -2,6 +2,8 @@ namespace NonogramAutomation
 {
     public class ProgramBourse : Program
     {
+        private int itemFarmCount = 0;
+
         public ProgramBourse(ADBInstance adbInstance, CancellationToken token)
              : base(adbInstance, token)
         {
@@ -86,6 +88,8 @@ namespace NonogramAutomation
 
         private async Task LoadBackupAsync(bool withEmptySave)
         {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
             await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnLoadZipAsync(TimeSpan.FromSeconds(10), _token);
@@ -99,11 +103,23 @@ namespace NonogramAutomation
 
         private async Task SaveBackupAsync()
         {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            string folder = @"C:\Users\dotte\Documents\MuMuSharedFolder";
+            string saveFilename = System.IO.Path.Combine(folder, "NonogramsKatana.zip");
+
             await ClickOnSettingsAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnOtherAsync(TimeSpan.FromSeconds(10), _token);
             await ClickOnSaveZipAsync(TimeSpan.FromSeconds(10), _token);
-            MoveSaveFile();
+
+            System.IO.File.Delete(saveFilename);
+
             await ClickOnSaveAsync(TimeSpan.FromSeconds(10), _token);
+
+            string backupFilename = System.IO.Path.Combine(folder, "NonogramsKatanaBackups", $"{DateTime.Now:yyyyMMdd_HHmmss}_{itemFarmCount++}.zip");
+            System.IO.File.Copy(saveFilename, backupFilename);
+
+            Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"New backup saved in {backupFilename}");
         }
 
         private async Task ClickOnGuildAsync(TimeSpan timeout, CancellationToken token)
@@ -153,15 +169,6 @@ namespace NonogramAutomation
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
             await Utils.ClickElementAsync(_adbInstance, "//node[@text='Sauvegarder la progression dans le fichier (zip)']", timeout, token);
-        }
-
-        private void MoveSaveFile()
-        {
-            string folder = @"C:\Users\dotte\Documents\MuMuSharedFolder";
-            string sourceFilename = System.IO.Path.Combine(folder, "NonogramsKatana.zip");
-            string destinationFilename = System.IO.Path.Combine(folder, $"SavedBackup_{DateTime.Now:yyyyMMdd_HHmmss}.zip");
-            Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Moving save file from {sourceFilename} to {destinationFilename}");
-            System.IO.File.Move(sourceFilename, destinationFilename);
         }
 
         private async Task ClickOnSaveAsync(TimeSpan timeout, CancellationToken token)
