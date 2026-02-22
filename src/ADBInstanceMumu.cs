@@ -49,7 +49,7 @@
                     }
                 }
             }
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
         public override async Task StopEmulator()
