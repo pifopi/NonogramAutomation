@@ -76,6 +76,11 @@ namespace NonogramAutomation
                     await ClickOnSaveAsync(TimeSpan.FromSeconds(10), _token);
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
                 }
+                catch (NoRoomForStorageException exception)
+                {
+                    Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+                    return;
+                }
                 catch (Exception exception)
                 {
                     Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
@@ -251,7 +256,7 @@ namespace NonogramAutomation
                 case 1:
                     throw new Exception("Survey detected");
                 case 2:
-                    throw new Exception("No room for storage");
+                    throw new NoRoomForStorageException();
                 default:
                     throw new Exception("Unexpected element index");
             }
@@ -280,6 +285,14 @@ namespace NonogramAutomation
                     return;
                 }
                 await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
+            }
+        }
+
+        private class NoRoomForStorageException : Exception
+        {
+            public NoRoomForStorageException()
+                : base("No room for storage")
+            {
             }
         }
     }
