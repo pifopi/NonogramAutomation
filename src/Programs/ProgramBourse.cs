@@ -262,7 +262,7 @@ namespace NonogramAutomation
                 case 1:
                     while (true)
                     {
-                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"No room for storage, pausing the program");
+                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> No room for storage, pausing the program");
                         await Task.Delay(TimeSpan.FromMinutes(5));
                     }
                 case 2:
