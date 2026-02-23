@@ -249,9 +249,9 @@ namespace NonogramAutomation
 
             List<string> queries = new()
             {
-                "//node[@class='android.view.View']",
                 "//node[@resource-id='contain-paidtasks-survey']",
-                "//node[@text=\"Pas d'espace disponible dans l'entrepôt\"]"
+                "//node[@text=\"Pas d'espace disponible dans l'entrepôt\"]",
+                "//node[@class='android.view.View']"
             };
 
             FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(30), linkedCts.Token);
@@ -263,12 +263,16 @@ namespace NonogramAutomation
             switch (foundElement.Index)
             {
                 case 0:
+                    throw new Exception("Survey detected");
+                case 1:
+                    while (true)
+                    {
+                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"No room for storage, pausing the program");
+                        await Task.Delay(TimeSpan.FromMinutes(5));
+                    }
+                case 2:
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Ad loaded properly");
                     break;
-                case 1:
-                    throw new Exception("Survey detected");
-                case 2:
-                    throw new NoRoomForStorageException();
                 default:
                     throw new Exception("Unexpected element index");
             }
@@ -295,14 +299,6 @@ namespace NonogramAutomation
                     return;
                 }
                 await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
-            }
-        }
-
-        private class NoRoomForStorageException : Exception
-        {
-            public NoRoomForStorageException()
-                : base("No room for storage")
-            {
             }
         }
     }
