@@ -74,11 +74,6 @@ namespace NonogramAutomation
                     await SaveBackupAsync();
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
                 }
-                catch (NoRoomForStorageException exception)
-                {
-                    Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
-                    return;
-                }
                 catch (Exception exception)
                 {
                     Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
