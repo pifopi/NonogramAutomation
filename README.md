@@ -1,15 +1,8 @@
 TODO list
 
-BOURSE
-- add a config file for item
 - hide console command
-
-FARM
+- add a notification system
 - automate workshop
 - automate ship
 - automate airship
 - automate train
-- ...
-
-GENERAL
-- add a notification system

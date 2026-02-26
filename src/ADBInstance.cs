@@ -67,9 +67,12 @@ namespace NonogramAutomation
             _programCts = new CancellationTokenSource();
             Program program = SelectedProgram switch
             {
-                ProgramType.Dump => new ProgramDump(this, _programCts.Token),
-                ProgramType.Bourse => new ProgramBourse(this, _programCts.Token),
+                ProgramType.BourseCoffee => new ProgramBourseCoffee(this, _programCts.Token),
+                ProgramType.BourseKatana => new ProgramBourseKatana(this, _programCts.Token),
+                ProgramType.BoursePotion => new ProgramBoursePotion(this, _programCts.Token),
+                ProgramType.BourseTreasureMap => new ProgramBourseTreasureMap(this, _programCts.Token),
                 ProgramType.Download => new ProgramDownload(this, _programCts.Token),
+                ProgramType.Dump => new ProgramDump(this, _programCts.Token),
                 _ => throw new NotImplementedException()
             };
             Task.Run(program.StartAsync).ContinueWith(t => Status = InstanceStatus.Idle);

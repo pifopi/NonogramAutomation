@@ -2,7 +2,10 @@
 {
     public enum ProgramType
     {
-        Bourse,
+        BourseCoffee,
+        BourseKatana,
+        BoursePotion,
+        BourseTreasureMap,
         Download,
         Dump,
     }

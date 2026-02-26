@@ -1,6 +1,6 @@
 namespace NonogramAutomation
 {
-    public class ProgramBourse : Program
+    public abstract class ProgramBourse : Program
     {
         private int itemFarmCount = 0;
 
@@ -9,7 +9,7 @@ namespace NonogramAutomation
         {
         }
 
-        private enum BourseItem
+        protected enum BourseItem
         {
             TreasureMap,
             Coffee,
@@ -17,10 +17,8 @@ namespace NonogramAutomation
             Potion
         }
 
-        public override async Task StartAsync()
+        protected async Task StartAsync(BourseItem item)
         {
-            BourseItem item = BourseItem.Katana;
-
             while (true)
             {
                 try
@@ -308,6 +306,58 @@ namespace NonogramAutomation
             public NoRoomForStorageException()
             {
             }
+        }
+    }
+
+    public class ProgramBourseTreasureMap : ProgramBourse
+    {
+        public ProgramBourseTreasureMap(ADBInstance adbInstance, CancellationToken token)
+             : base(adbInstance, token)
+        {
+        }
+
+        public override async Task StartAsync()
+        {
+            await StartAsync(BourseItem.TreasureMap);
+        }
+    }
+
+    public class ProgramBourseCoffee : ProgramBourse
+    {
+        public ProgramBourseCoffee(ADBInstance adbInstance, CancellationToken token)
+             : base(adbInstance, token)
+        {
+        }
+
+        public override async Task StartAsync()
+        {
+            await StartAsync(BourseItem.Coffee);
+        }
+    }
+
+    public class ProgramBourseKatana : ProgramBourse
+    {
+        public ProgramBourseKatana(ADBInstance adbInstance, CancellationToken token)
+             : base(adbInstance, token)
+        {
+        }
+
+        public override async Task StartAsync()
+        {
+            await StartAsync(BourseItem.Katana);
+        }
+    }
+
+    public class ProgramBoursePotion : ProgramBourse
+    {
+        public ProgramBoursePotion(ADBInstance adbInstance, CancellationToken token)
+             : base(adbInstance, token)
+        {
+        }
+
+        public override async Task StartAsync()
+        {
+            await StartAsync(BourseItem.Potion);
         }
     }
 }
