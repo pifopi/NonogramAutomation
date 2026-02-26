@@ -68,7 +68,18 @@ namespace NonogramAutomation
                     await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnBourseAsync(TimeSpan.FromSeconds(10), _token);
                     await ScrollAndClickOnItemAsync(item, TimeSpan.FromSeconds(30), _token);
-                    await WaitForRewardAsync(TimeSpan.FromSeconds(80), _token);
+                    try
+                    {
+                        await WaitForRewardAsync(TimeSpan.FromSeconds(80), _token);
+                    }
+                    catch (NoRoomForStorageException exception)
+                    {
+                        while (true)
+                        {
+                            Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+                            await Task.Delay(TimeSpan.FromMinutes(1));
+                        }
+                    }
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
                     await SaveBackupAsync();
@@ -260,11 +271,7 @@ namespace NonogramAutomation
                 case 0:
                     throw new Exception("Survey detected");
                 case 1:
-                    while (true)
-                    {
-                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> No room for storage, pausing the program");
-                        await Task.Delay(TimeSpan.FromMinutes(5));
-                    }
+                    throw new NoRoomForStorageException();
                 case 2:
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Ad loaded properly");
                     break;
@@ -294,6 +301,12 @@ namespace NonogramAutomation
                     return;
                 }
                 await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
+            }
+        }
+        private class NoRoomForStorageException : Exception
+        {
+            public NoRoomForStorageException()
+            {
             }
         }
     }
