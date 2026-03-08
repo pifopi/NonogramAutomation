@@ -2,13 +2,14 @@
 
 namespace NonogramAutomation
 {
-    public abstract class ADBInstance : System.ComponentModel.INotifyPropertyChanged
+    public abstract class ADBInstance : System.ComponentModel.INotifyPropertyChanged, IDisposable
     {
         private string _name = "New instance";
         private InstanceStatus _status = InstanceStatus.Idle;
         private ProgramType _selectedProgram = ProgramType.Dump;
 
         private CancellationTokenSource _programCts = new();
+        private bool _disposed;
 
         public string Name
         {
@@ -55,6 +56,17 @@ namespace NonogramAutomation
 
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
+        public virtual void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _programCts?.Dispose();
+        }
+
         protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
@@ -64,6 +76,7 @@ namespace NonogramAutomation
         {
             using LogContext logContext = new(Logger.LogLevel.Info, LogHeader, $"StartProgram {SelectedProgram}");
             Status = InstanceStatus.Running;
+            _programCts?.Dispose();
             _programCts = new CancellationTokenSource();
             Program program = SelectedProgram switch
             {
@@ -105,6 +118,14 @@ namespace NonogramAutomation
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
             await AdbClient.StopAppAsync(DeviceData, "com.ucdevs.jcross");
             await Task.Delay(TimeSpan.FromSeconds(5));
+        }
+
+        protected virtual void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(GetType().FullName);
+            }
         }
     }
 }

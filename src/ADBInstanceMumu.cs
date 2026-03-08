@@ -22,7 +22,7 @@
 
             while (true)
             {
-                System.Diagnostics.Process process = new()
+                using System.Diagnostics.Process process = new()
                 {
                     StartInfo = new()
                     {

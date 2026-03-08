@@ -1,6 +1,6 @@
 ﻿namespace NonogramAutomation
 {
-    public class UndoActions : IAsyncDisposable
+    public sealed class UndoActions : IAsyncDisposable
     {
         private readonly List<Func<ValueTask>> _undoActions = new();
 

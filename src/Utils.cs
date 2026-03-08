@@ -6,7 +6,7 @@ namespace NonogramAutomation
     {
         public static void ExecuteCmd(string fileName, string arguments)
         {
-            System.Diagnostics.Process process = new()
+            using System.Diagnostics.Process process = new()
             {
                 StartInfo = new(fileName, arguments)
                 //{
@@ -53,7 +53,7 @@ namespace NonogramAutomation
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
-            AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbInstance.AdbClient.GetFrameBufferAsync(adbInstance.DeviceData, linkedCts.Token);
+            using AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbInstance.AdbClient.GetFrameBufferAsync(adbInstance.DeviceData, linkedCts.Token);
             if (framebuffer.Header.Red.Length != 8 ||
                 framebuffer.Header.Green.Length != 8 ||
                 framebuffer.Header.Blue.Length != 8 ||
@@ -255,7 +255,7 @@ namespace NonogramAutomation
         {
             Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Swiping to bottom");
 
-            AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbInstance.AdbClient.GetFrameBufferAsync(adbInstance.DeviceData);
+            using AdvancedSharpAdbClient.Models.Framebuffer framebuffer = await adbInstance.AdbClient.GetFrameBufferAsync(adbInstance.DeviceData);
             int x = (int)(framebuffer.Header.Width * 0.5);
             int yBottom = (int)(framebuffer.Header.Height * 0.80);
             int yTop = (int)(framebuffer.Header.Height * 0.20);
@@ -300,7 +300,7 @@ namespace NonogramAutomation
 
             if (dumpBounds)
             {
-                System.Xml.XmlNodeList nodes = xml.SelectNodes("//*[@bounds]") ?? throw new Exception("xml document is invalid");
+                using System.Xml.XmlNodeList nodes = xml.SelectNodes("//*[@bounds]") ?? throw new Exception("xml document is invalid");
                 int count = nodes.Count;
                 int index = 0;
                 foreach (System.Xml.XmlNode node in nodes)
