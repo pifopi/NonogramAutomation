@@ -55,8 +55,11 @@
         public override async Task StopEmulator()
         {
             using LogContext logContext = new(Logger.LogLevel.Info, LogHeader);
-            Utils.ExecuteCmd("taskkill", "/IM MuMuNxDevice.exe /F");
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            foreach (var process in System.Diagnostics.Process.GetProcessesByName("MuMuNxDevice"))
+            {
+                process.CloseMainWindow();
+                await process.WaitForExitAsync();
+            }
         }
 
         protected override int GetPort()

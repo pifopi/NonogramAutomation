@@ -9,9 +9,6 @@ namespace NonogramAutomation
             using System.Diagnostics.Process process = new()
             {
                 StartInfo = new(fileName, arguments)
-                //{
-                //    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
-                //}
             };
             process.Start();
         }
