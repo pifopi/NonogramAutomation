@@ -12,12 +12,18 @@ namespace NonogramAutomation
         protected enum BourseItem
         {
             TreasureMap,
-            Coffee,
+            CoffeeBean,
             Katana,
             Potion
         }
 
-        protected async Task StartAsync(BourseItem item)
+        protected enum ActionWhenFull
+        {
+            Stop,
+            Continue
+        }
+
+        protected async Task StartAsync(BourseItem item, ActionWhenFull actionWhenFull)
         {
             while (true)
             {
@@ -75,6 +81,10 @@ namespace NonogramAutomation
                         while (true)
                         {
                             Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+                            if (actionWhenFull == ActionWhenFull.Continue)
+                            {
+                                throw;
+                            }
                             await Task.Delay(TimeSpan.FromMinutes(1));
                         }
                     }
@@ -82,6 +92,10 @@ namespace NonogramAutomation
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
                     await SaveBackupAsync();
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(10), _token);
+                }
+                catch (NoRoomForStorageException)
+                {
+                    break;
                 }
                 catch (Exception exception)
                 {
@@ -200,7 +214,7 @@ namespace NonogramAutomation
             string itemAsString = item switch
             {
                 BourseItem.TreasureMap => "Fragment",
-                BourseItem.Coffee => "Grains",
+                BourseItem.CoffeeBean => "Grains",
                 BourseItem.Katana => "Katana",
                 BourseItem.Potion => "Potion",
                 _ => throw new NotImplementedException()
@@ -318,20 +332,20 @@ namespace NonogramAutomation
 
         public override async Task StartAsync()
         {
-            await StartAsync(BourseItem.TreasureMap);
+            await StartAsync(BourseItem.TreasureMap, ActionWhenFull.Stop);
         }
     }
 
-    public class ProgramBourseCoffee : ProgramBourse
+    public class ProgramBourseCoffeeBean : ProgramBourse
     {
-        public ProgramBourseCoffee(ADBInstance adbInstance, CancellationToken token)
+        public ProgramBourseCoffeeBean(ADBInstance adbInstance, CancellationToken token)
              : base(adbInstance, token)
         {
         }
 
         public override async Task StartAsync()
         {
-            await StartAsync(BourseItem.Coffee);
+            await StartAsync(BourseItem.CoffeeBean, ActionWhenFull.Stop);
         }
     }
 
@@ -344,7 +358,7 @@ namespace NonogramAutomation
 
         public override async Task StartAsync()
         {
-            await StartAsync(BourseItem.Katana);
+            await StartAsync(BourseItem.Katana, ActionWhenFull.Stop);
         }
     }
 
@@ -357,7 +371,23 @@ namespace NonogramAutomation
 
         public override async Task StartAsync()
         {
-            await StartAsync(BourseItem.Potion);
+            await StartAsync(BourseItem.Potion, ActionWhenFull.Stop);
+        }
+    }
+
+    public class ProgramBourseAll : ProgramBourse
+    {
+        public ProgramBourseAll(ADBInstance adbInstance, CancellationToken token)
+             : base(adbInstance, token)
+        {
+        }
+
+        public override async Task StartAsync()
+        {
+            await StartAsync(BourseItem.Katana, ActionWhenFull.Continue);
+            await StartAsync(BourseItem.Potion, ActionWhenFull.Continue);
+            await StartAsync(BourseItem.CoffeeBean, ActionWhenFull.Continue);
+            await StartAsync(BourseItem.TreasureMap, ActionWhenFull.Stop);
         }
     }
 }
