@@ -118,7 +118,6 @@ namespace NonogramAutomation
         {
             using LogContext logContext = new(Logger.LogLevel.Debug, LogHeader);
             await AdbClient.StopAppAsync(DeviceData, "com.ucdevs.jcross");
-            await Task.Delay(TimeSpan.FromSeconds(5));
         }
 
         protected virtual void ThrowIfDisposed()
