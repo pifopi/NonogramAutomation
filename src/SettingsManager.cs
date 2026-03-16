@@ -16,7 +16,8 @@
 
         public static string GetDiscordBotToken()
         {
-            return Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new Exception("DISCORD_BOT_TOKEN is not set");
+            string key = "DISCORD_BOT_TOKEN_NonogramAutomation";
+            return Environment.GetEnvironmentVariable(key) ?? throw new Exception($"{key} is not set");
         }
     }
 }
