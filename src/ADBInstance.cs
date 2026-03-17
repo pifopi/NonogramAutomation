@@ -92,6 +92,7 @@ namespace NonogramAutomation
             
             string programName = Enum.GetName(SelectedProgram) ?? throw new Exception("Program name is null");
             Task.Run(async () => await DiscordLogger.SetProgramAsync(programName));
+            Logger.Log(Logger.LogLevel.Info, "", $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Starting {programName}");
             Task.Run(program.StartAsync).ContinueWith(t => Status = InstanceStatus.Idle);
         }
 
