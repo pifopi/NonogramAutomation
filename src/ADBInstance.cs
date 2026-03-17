@@ -89,6 +89,9 @@ namespace NonogramAutomation
                 ProgramType.Dump => new ProgramDump(this, _programCts.Token),
                 _ => throw new NotImplementedException()
             };
+            
+            string programName = Enum.GetName(SelectedProgram) ?? throw new Exception("Program name is null");
+            Task.Run(async () => await DiscordLogger.SetProgramAsync(programName));
             Task.Run(program.StartAsync).ContinueWith(t => Status = InstanceStatus.Idle);
         }
 

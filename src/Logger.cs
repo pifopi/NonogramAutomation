@@ -86,5 +86,10 @@
             }
             _waitingMessages.Clear();
         }
+
+        public static async Task SetProgramAsync(string program)
+        {
+            await _client.SetGameAsync(program);
+        }
     }
 }
