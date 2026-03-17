@@ -72,7 +72,8 @@
                 case Discord.LoginState.LoggedIn:
                     if (await _client.GetChannelAsync(SettingsManager.GlobalSettings.DiscordChannelId) is Discord.IMessageChannel channel)
                     {
-                        await channel.SendMessageAsync(logEvent.Message);
+                        long timestamp = new DateTimeOffset(logEvent.TimeStamp).ToUnixTimeSeconds();
+                        await channel.SendMessageAsync($"<t:{timestamp}:R> {logEvent.Message}");
                     }
                     break;
             }
