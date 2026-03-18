@@ -80,15 +80,15 @@ namespace NonogramAutomation
             _programCts = new CancellationTokenSource();
             Program program = SelectedProgram switch
             {
-                ProgramType.Deleted => new ProgramDeleted(this, _programCts.Token),
-                ProgramType.Favorites => new ProgramFavorite(this, _programCts.Token),
+                ProgramType.BourseAll => new ProgramBourseAll(this, _programCts.Token),
                 ProgramType.BourseCoffeeBean => new ProgramBourseCoffeeBean(this, _programCts.Token),
                 ProgramType.BourseKatana => new ProgramBourseKatana(this, _programCts.Token),
                 ProgramType.BoursePotion => new ProgramBoursePotion(this, _programCts.Token),
                 ProgramType.BourseTreasureMap => new ProgramBourseTreasureMap(this, _programCts.Token),
-                ProgramType.BourseAll => new ProgramBourseAll(this, _programCts.Token),
+                ProgramType.Deleted => new ProgramDeleted(this, _programCts.Token),
                 ProgramType.Download => new ProgramDownload(this, _programCts.Token),
                 ProgramType.Dump => new ProgramDump(this, _programCts.Token),
+                ProgramType.Favorites => new ProgramFavorite(this, _programCts.Token),
                 _ => throw new NotImplementedException()
             };
             
