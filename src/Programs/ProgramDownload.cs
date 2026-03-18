@@ -40,7 +40,7 @@ namespace NonogramAutomation
             }
             catch (OperationCanceledException exception)
             {
-                Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"An exception has been raised:{exception}");
+                Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"An exception has been raised:{exception}");
             }
             catch (Exception exception)
             {

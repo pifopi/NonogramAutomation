@@ -80,7 +80,7 @@ namespace NonogramAutomation
                     {
                         while (true)
                         {
-                            Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+                            Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
                             if (actionWhenFull == ActionWhenFull.Continue)
                             {
                                 throw;
