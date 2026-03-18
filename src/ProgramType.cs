@@ -11,6 +11,6 @@
         Download,
         Dump,
         Favorites,
-        Deleted,
+        Lua,
     }
 }
