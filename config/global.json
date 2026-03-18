@@ -4,13 +4,17 @@
   "MuMuPath": "C:\\Program Files\\Netease\\MuMuPlayerGlobal-12.0",
   "MuMuInstances": [
     {
-      "Name": "Compte_01",
+      "Name": "Principal",
       "MuMuId": 0
+    },
+    {
+      "Name": "Test",
+      "MuMuId": 1
     }
   ],
   "RealPhoneInstances": [
     {
-      "Name": "Compte_01",
+      "Name": "Pixel 6",
       "IP": "192.168.1.63",
       "Port": 5555
     }

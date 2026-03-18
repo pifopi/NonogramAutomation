@@ -13,6 +13,20 @@ namespace NonogramAutomation
             process.Start();
         }
 
+        public static string? GetCommandLine(int processId)
+        {
+            string query = $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {processId}";
+            using System.Management.ManagementObjectSearcher searcher = new(query);
+            using System.Management.ManagementObjectCollection collection = searcher.Get();
+
+            foreach (System.Management.ManagementObject obj in collection)
+            {
+                return obj["CommandLine"]?.ToString();
+            }
+
+            return null;
+        }
+
         public static async Task<AdvancedSharpAdbClient.Models.DeviceData> GetDeviceDataFromAsync(AdvancedSharpAdbClient.AdbClient adbClient, string key, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);

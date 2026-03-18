@@ -18,7 +18,7 @@
         public override async Task StartEmulator(CancellationToken token)
         {
             using LogContext logContext = new(Logger.LogLevel.Info, LogHeader);
-            Utils.ExecuteCmd(System.IO.Path.Combine(SettingsManager.GlobalSettings.MuMuPath, "nx_device", "12.0", "shell", "MuMuNxDevice.exe"), "");
+            Utils.ExecuteCmd(System.IO.Path.Combine(SettingsManager.GlobalSettings.MuMuPath, "nx_device", "12.0", "shell", "MuMuNxDevice.exe"), $"-v {MuMuId}");
 
             while (true)
             {
@@ -57,8 +57,13 @@
             using LogContext logContext = new(Logger.LogLevel.Info, LogHeader);
             foreach (var process in System.Diagnostics.Process.GetProcessesByName("MuMuNxDevice"))
             {
-                process.CloseMainWindow();
-                await process.WaitForExitAsync();
+                string? commandLine = Utils.GetCommandLine(process.Id);
+                if (commandLine != null &&
+                    commandLine.Contains($"-v {MuMuId}"))
+                {
+                    process.CloseMainWindow();
+                    await process.WaitForExitAsync();
+                }
             }
         }
 
