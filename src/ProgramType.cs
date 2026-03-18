@@ -9,5 +9,7 @@
         BourseAll,
         Download,
         Dump,
+        Favorites,
+        Deleted,
     }
 }
