@@ -73,7 +73,7 @@
                     if (await _client.GetChannelAsync(SettingsManager.GlobalSettings.DiscordChannelId) is Discord.IMessageChannel channel)
                     {
                         long timestamp = new DateTimeOffset(logEvent.TimeStamp).ToUnixTimeSeconds();
-                        await channel.SendMessageAsync($"<t:{timestamp}:R> {logEvent.Message}");
+                        await channel.SendMessageAsync($"<t:{timestamp}:T> {logEvent.Message}");
                     }
                     break;
             }
