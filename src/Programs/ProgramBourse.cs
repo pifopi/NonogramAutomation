@@ -40,10 +40,10 @@ namespace NonogramAutomation
 
                     await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnBourseAsync(TimeSpan.FromSeconds(10), _token);
-                    await ScrollAndClickOnItemAsync(item, TimeSpan.FromSeconds(30), _token);
+                    await ScrollUntilItemAsync(item, TimeSpan.FromSeconds(10), _token);
                     try
                     {
-                        await WaitForRewardAsync(TimeSpan.FromSeconds(80), _token);
+                        await ClickOnItemAsync(item, TimeSpan.FromSeconds(30), _token);
                     }
                     catch (NoRoomForStorageException exception)
                     {
@@ -85,7 +85,7 @@ namespace NonogramAutomation
             await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/catBourse']", timeout, token);
         }
 
-        private async Task ScrollAndClickOnItemAsync(BourseItem item, TimeSpan timeout, CancellationToken parentToken)
+        private async Task ScrollUntilItemAsync(BourseItem item, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
@@ -124,8 +124,6 @@ namespace NonogramAutomation
 
                 if (foundElement.Index == 0)
                 {
-                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
-                    await foundElement.Element.ClickAsync(linkedCts.Token);
                     return;
                 }
                 else if (foundElement.Index >= 1 && foundElement.Index <= 20)
@@ -139,41 +137,53 @@ namespace NonogramAutomation
             }
         }
 
-        private async Task WaitForRewardAsync(TimeSpan timeout, CancellationToken parentToken)
+        private async Task ClickOnItemAsync(BourseItem item, TimeSpan timeout, CancellationToken parentToken)
         {
             using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
 
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
+            string itemAsString = item switch
+            {
+                BourseItem.TreasureMap => "Fragment",
+                BourseItem.CoffeeBean => "Grains",
+                BourseItem.Katana => "Katana",
+                BourseItem.Potion => "Potion",
+                _ => throw new NotImplementedException()
+            };
+
             List<string> queries = new()
             {
                 "//node[@resource-id='contain-paidtasks-survey']",
                 "//node[@text=\"Pas d'espace disponible dans l'entrepôt\"]",
-                "//node[@class='android.view.View']"
+                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]"
             };
 
-            FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(30), linkedCts.Token);
-            if (foundElement is null)
+            while (true)
             {
-                await Utils.DumpAllAsync(_adbInstance, "NoAds", false, linkedCts.Token);
-                throw new Exception("No ad was loaded after 10s");
-            }
-            switch (foundElement.Index)
-            {
-                case 0:
-                    throw new Exception("Survey detected");
-                case 1:
-                    throw new NoRoomForStorageException();
-                case 2:
-                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Ad loaded properly");
-                    break;
-                default:
-                    throw new Exception("Unexpected element index");
-            }
+                linkedCts.Token.ThrowIfCancellationRequested();
 
-            await Task.Delay(TimeSpan.FromSeconds(30), linkedCts.Token);
-
+                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(2), linkedCts.Token);
+                if (foundElement is null)
+                {
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, "Ad loaded properly");
+                    return;
+                }
+                switch (foundElement.Index)
+                {
+                    case 0:
+                        throw new Exception("Survey detected");
+                    case 1:
+                        throw new NoRoomForStorageException();
+                    case 2:
+                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
+                        await foundElement.Element.ClickAsync(linkedCts.Token);
+                        break;
+                    default:
+                        throw new Exception("Unexpected element index");
+                }
+            }
         }
 
         private async Task ReturnToMainMenuAsync(TimeSpan timeout, CancellationToken parentToken)
@@ -196,6 +206,7 @@ namespace NonogramAutomation
                 await Utils.ClickBackButtonAsync(_adbInstance, linkedCts.Token);
             }
         }
+
         private class NoRoomForStorageException : Exception
         {
             public NoRoomForStorageException()
