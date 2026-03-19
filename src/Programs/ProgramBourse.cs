@@ -23,6 +23,8 @@ namespace NonogramAutomation
 
         protected async Task StartAsync(BourseItem item, ActionWhenFull actionWhenFull)
         {
+            int itemCount = 0;
+
             while (true)
             {
                 try
@@ -59,6 +61,8 @@ namespace NonogramAutomation
                     }
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
+                    itemCount++;
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Successfully bought {item} {itemCount} time(s)");
                 }
                 catch (NoRoomForStorageException)
                 {
