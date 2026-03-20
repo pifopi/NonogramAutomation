@@ -168,7 +168,7 @@ namespace NonogramAutomation
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(2), linkedCts.Token);
+                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(10), linkedCts.Token);
                 if (foundElement is null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, "Ad loaded properly");
