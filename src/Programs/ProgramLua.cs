@@ -35,7 +35,7 @@ namespace NonogramAutomation
             { "Chats", "Cats" },
             { "Chiens", "Dogs" },
             { "Oiseaux", "Birds" },
-            { "Oiseaux", "Fish" },
+            { "Poissons, Monde sous-marin", "Fish" },
             { "Insectes, Papillons, Araignées, Escargots", "Insects" },
             { "Plantes, Légumes, Fruits, Baies, Champignons", "Plants" },
             { "Fleurs", "Flowers" },
@@ -56,7 +56,7 @@ namespace NonogramAutomation
             { "Japon", "Japan" },
             { "Aventures, Voyage, Secrets", "Adventures" },
             { "Pirates !", "Pirates" },
-            { "Pirates !", "Ships" },
+            { "Bateaux, Navires", "Ships" },
             { "Symboles, Signes, Logo, Glyphes, Armoiries", "Symbols" },
             { "Drapeaux", "Flags" },
             { "Histoire, Culture, Religion", "History" },
@@ -92,24 +92,46 @@ namespace NonogramAutomation
             try
             {
                 await _adbInstance.ConnectToInstanceAsync(_token);
-                foreach (Puzzle BW in BWs)
-                {
-                    await GoToSearchMenuAsync(TimeSpan.FromSeconds(10), _token);
-                    await InputPuzzleAsync(TimeSpan.FromSeconds(10), _token, BW.Link);
-                    await GoToPuzzleListAsync(TimeSpan.FromSeconds(10), _token);
-                    string size = await ReadSizeAsync();
-                    UpdateValue(BW, "Size", size);
-                    await GoToPuzzleDetailsMenuAsync(TimeSpan.FromSeconds(10), _token);
-                    (string author, string category1, string category2) = await ReadDetailsAsync();
-                    UpdateValue(BW, "Author", author);
-                    UpdateValue(BW, "Category1", category1);
-                    UpdateValue(BW, "Category2", category2);
-                    await Utils.ClickBackButtonAsync(_adbInstance, _token);
-                }
+
+                await UpdatePuzzleList(BWs);
+                string BWsLuaContent = await PuzzleListToLua(BWs);
+                System.IO.File.WriteAllText("BWs_cleaned.lua", BWsLuaContent);
+
+
+                await UpdatePuzzleList(colors);
+                string colorsLuaContent = await PuzzleListToLua(colors);
+                System.IO.File.WriteAllText("Colors_cleaned.lua", colorsLuaContent);
             }
             catch (Exception exception)
             {
                 Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+            }
+        }
+
+        private async Task UpdatePuzzleList(List<Puzzle> puzzles)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            foreach (Puzzle puzzle in puzzles)
+            {
+                await GoToSearchMenuAsync(TimeSpan.FromSeconds(10), _token);
+                await InputPuzzleAsync(TimeSpan.FromSeconds(10), _token, puzzle.Link);
+                await GoToPuzzleListAsync(TimeSpan.FromSeconds(10), _token);
+                FoundElement? element = await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnCtxMenu']", TimeSpan.FromSeconds(10), _token);
+                if (element is null)
+                {
+                    UpdateValue(puzzle, "Link", $"{puzzle.Link} - DELETED");
+                    continue;
+                }
+                string size = await ReadSizeAsync();
+                UpdateValue(puzzle, "Size", size);
+                await element.Element.ClickAsync(_token);
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                (string author, string category1, string category2) = await ReadDetailsAsync();
+                UpdateValue(puzzle, "Author", author);
+                UpdateValue(puzzle, "Category1", category1);
+                UpdateValue(puzzle, "Category2", category2);
+                await Utils.ClickBackButtonAsync(_adbInstance, _token);
             }
         }
 
@@ -186,7 +208,8 @@ namespace NonogramAutomation
             System.Xml.XmlNode sizeNode = xml.SelectSingleNode("//node[@resource-id='com.ucdevs.jcross:id/text']") ?? throw new Exception("xml document is missing size node");
             System.Xml.XmlAttributeCollection attributes = sizeNode.Attributes ?? throw new Exception("xml size node is missing attributes");
             System.Xml.XmlAttribute attribute = attributes["text"] ?? throw new Exception("xml size node is missing text attribute");
-            return attribute.Value.Split('\n')[2].Trim();
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(attribute.Value, @"\d+x\d+") ?? throw new Exception("xml size node attribute is not formatted properly");
+            return match.Value;
         }
 
         private void UpdateValue(Puzzle puzzle, string propertyName, string newValue)
@@ -198,13 +221,6 @@ namespace NonogramAutomation
                 Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"Puzzle {puzzle.Link} is different for {propertyName} ('{previousValue}' vs '{newValue}')");
                 propertyInfo.SetValue(puzzle, newValue);
             }
-        }
-
-        private async Task GoToPuzzleDetailsMenuAsync(TimeSpan timeout, CancellationToken token)
-        {
-            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
-
-            await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnCtxMenu']", timeout, token);
         }
 
         private async Task<(string, string, string)> ReadDetailsAsync()
@@ -234,15 +250,14 @@ namespace NonogramAutomation
 
         private async Task<string> ReadCategory2Async(System.Xml.XmlDocument xml)
         {
-            System.Xml.XmlNode category2Node = xml.SelectSingleNode("//node[@resource-id='com.ucdevs.jcross:id/tag2']") ?? throw new Exception("xml document is missing category 2 node");
-            string? category2 = await ReadCategoryAsync(category2Node);
-            if (category2 is null)
+            System.Xml.XmlNode? category2Node = xml.SelectSingleNode("//node[@resource-id='com.ucdevs.jcross:id/tag2']");
+            if (category2Node is null)
             {
                 return "";
             }
             else
             {
-                return category2;
+                return await ReadCategoryAsync(category2Node) ?? throw new Exception("category 1 is missing");
             }
         }
 
@@ -251,6 +266,44 @@ namespace NonogramAutomation
             System.Xml.XmlAttributeCollection attributes = node.Attributes ?? throw new Exception("xml category node is missing attributes");
             System.Xml.XmlAttribute attribute = attributes["text"] ?? throw new Exception("xml category node is missing text attribute");
             return _categoryDictionnary.GetValueOrDefault(attribute.Value);
+        }
+
+        private async Task<string> PuzzleListToLua(List<Puzzle> puzzles)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("return {");
+
+            foreach (var puzzle in puzzles)
+            {
+                sb.AppendLine("\t{");
+                sb.AppendLine($"\t\tlink            = \"{puzzle.Link.Replace("\"", "\\\"")}\",");
+                sb.AppendLine($"\t\tauthor          = \"{puzzle.Author}\",");
+                sb.AppendLine($"\t\txp              = \"{puzzle.XP}\",");
+                sb.AppendLine($"\t\tnew_xp          = \"{puzzle.NewXP}\",");
+                sb.AppendLine($"\t\tsize            = \"{puzzle.Size}\",");
+                sb.AppendLine($"\t\tcategory_1      = \"{puzzle.Category1}\",");
+                sb.AppendLine($"\t\tcategory_2      = \"{puzzle.Category2}\",");
+                sb.AppendLine($"\t\tpuzzle_type     = \"{puzzle.PuzzleType}\",");
+
+                sb.AppendLine("\t},");
+            }
+
+            sb.AppendLine("\t-- Placeholder (for copy-pasting).");
+            sb.AppendLine("\t{");
+            sb.AppendLine($"\t\tlink            = \"\",");
+            sb.AppendLine($"\t\tauthor          = \"\",");
+            sb.AppendLine($"\t\txp              = \"\",");
+            sb.AppendLine($"\t\tnew_xp          = \"\",");
+            sb.AppendLine($"\t\tsize            = \"\",");
+            sb.AppendLine($"\t\tcategory_1      = \"\",");
+            sb.AppendLine($"\t\tcategory_2      = \"\",");
+            sb.AppendLine($"\t\tpuzzle_type     = \"\",");
+
+            sb.AppendLine("\t},");
+            sb.AppendLine("}");
+            return sb.ToString();
         }
     }
 }
