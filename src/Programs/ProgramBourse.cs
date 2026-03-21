@@ -47,6 +47,11 @@ namespace NonogramAutomation
                     {
                         await ClickOnItemAsync(item, TimeSpan.FromSeconds(30), _token);
                     }
+                    catch (OperationCanceledException)
+                    {
+                        Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"Ad not loaded");
+                        continue;
+                    }
                     catch (NoRoomForStorageException exception)
                     {
                         while (true)
@@ -62,7 +67,7 @@ namespace NonogramAutomation
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
                     itemCount++;
-                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Successfully bought {item} {itemCount} time(s)");
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Successfully collected {itemCount} {item}");
                 }
                 catch (NoRoomForStorageException)
                 {
