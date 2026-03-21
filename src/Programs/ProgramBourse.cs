@@ -168,7 +168,7 @@ namespace NonogramAutomation
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
 
-                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(10), linkedCts.Token);
+                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(2), linkedCts.Token);
                 if (foundElement is null)
                 {
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, "Ad loaded properly");
@@ -183,6 +183,7 @@ namespace NonogramAutomation
                     case 2:
                         Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
                         await foundElement.Element.ClickAsync(linkedCts.Token);
+                        await Task.Delay(TimeSpan.FromSeconds(1));
                         break;
                     default:
                         throw new Exception("Unexpected element index");
