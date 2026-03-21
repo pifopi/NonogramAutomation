@@ -65,7 +65,7 @@ namespace NonogramAutomation
                         }
                     }
 
-                    await ReturnToMainMenuAsync(TimeSpan.FromSeconds(60), _token);
+                    await ReturnToMainMenuAsync(TimeSpan.FromSeconds(90), _token);
                     itemCount++;
                     Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Successfully collected {itemCount} {item}");
                 }
