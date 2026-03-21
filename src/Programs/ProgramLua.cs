@@ -112,8 +112,12 @@ namespace NonogramAutomation
         {
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
+            int index = 0;
+
             foreach (Puzzle puzzle in puzzles)
             {
+                Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Handling puzzle {++index}/{puzzles.Count}");
+
                 await GoToSearchMenuAsync(TimeSpan.FromSeconds(10), _token);
                 await InputPuzzleAsync(TimeSpan.FromSeconds(10), _token, puzzle.Link);
                 await GoToPuzzleListAsync(TimeSpan.FromSeconds(10), _token);
