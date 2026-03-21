@@ -87,8 +87,8 @@ namespace NonogramAutomation
 
         public override async Task StartAsync()
         {
-            List<Puzzle> BWs = GetPuzzlesFromLua("BWs.lua");
-            List<Puzzle> colors = GetPuzzlesFromLua("Colors.lua");
+            List<Puzzle> BWs = GetPuzzlesFromLua("config/BWs.lua");
+            List<Puzzle> colors = GetPuzzlesFromLua("config/Colors.lua");
             try
             {
                 await _adbInstance.ConnectToInstanceAsync(_token);
