@@ -101,6 +101,8 @@ namespace NonogramAutomation
                 await UpdatePuzzleList(colors);
                 string colorsLuaContent = await PuzzleListToLua(colors);
                 System.IO.File.WriteAllText("Colors_cleaned.lua", colorsLuaContent);
+
+                Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Done dumping updated LUA files");
             }
             catch (Exception exception)
             {
