@@ -214,7 +214,7 @@ namespace NonogramAutomation
             System.Xml.XmlNode sizeNode = xml.SelectSingleNode("//node[@resource-id='com.ucdevs.jcross:id/text']") ?? throw new Exception("xml document is missing size node");
             System.Xml.XmlAttributeCollection attributes = sizeNode.Attributes ?? throw new Exception("xml size node is missing attributes");
             System.Xml.XmlAttribute attribute = attributes["text"] ?? throw new Exception("xml size node is missing text attribute");
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(attribute.Value, @"\d+x\d+") ?? throw new Exception("xml size node attribute is not formatted properly");
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(attribute.Value, @"\d+x\d+", System.Text.RegularExpressions.RegexOptions.RightToLeft) ?? throw new Exception("xml size node attribute is not formatted properly");
             return match.Value;
         }
 
