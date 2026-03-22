@@ -23,7 +23,7 @@ namespace NonogramAutomation
 
         protected async Task StartAsync(BourseItem item, ActionWhenFull actionWhenFull)
         {
-            int itemCount = 0;
+            int collectTimes = 0;
 
             while (true)
             {
@@ -66,8 +66,16 @@ namespace NonogramAutomation
                     }
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(90), _token);
-                    itemCount++;
-                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Successfully collected {itemCount} {item}");
+                    collectTimes++;
+                    int countPerCollect = item switch
+                    {
+                        BourseItem.TreasureMap => 2,
+                        BourseItem.CoffeeBean => 2,
+                        BourseItem.Katana => 5,
+                        BourseItem.Potion => 1,
+                        _ => throw new NotImplementedException()
+                    };
+                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Successfully collected {item} (collected {collectTimes} times(s) for {collectTimes * countPerCollect} item(s))");
                 }
                 catch (NoRoomForStorageException)
                 {
