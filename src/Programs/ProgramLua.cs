@@ -97,7 +97,6 @@ namespace NonogramAutomation
                 string BWsLuaContent = await PuzzleListToLua(BWs);
                 System.IO.File.WriteAllText("BWs_cleaned.lua", BWsLuaContent);
 
-
                 await UpdatePuzzleList(colors);
                 string colorsLuaContent = await PuzzleListToLua(colors);
                 System.IO.File.WriteAllText("Colors_cleaned.lua", colorsLuaContent);
@@ -126,7 +125,7 @@ namespace NonogramAutomation
                 FoundElement? element = await Utils.FindElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/btnCtxMenu']", TimeSpan.FromSeconds(10), _token);
                 if (element is null)
                 {
-                    UpdateValue(puzzle, "Link", $"{puzzle.Link} - DELETED");
+                    Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"LUA DIFFERENCE - Puzzle {puzzle.Link} has been deleted')");
                     continue;
                 }
                 string size = await ReadSizeAsync();
@@ -137,6 +136,9 @@ namespace NonogramAutomation
                 UpdateValue(puzzle, "Author", author);
                 UpdateValue(puzzle, "Category1", category1);
                 UpdateValue(puzzle, "Category2", category2);
+                await GoToExtraDetailsAsync(TimeSpan.FromSeconds(10), _token);
+                string puzzleType = await ReadPuzzleTypeAsync();
+                UpdateValue(puzzle, "PuzzleType", puzzleType);
                 await Utils.ClickBackButtonAsync(_adbInstance, _token);
             }
         }
@@ -208,6 +210,13 @@ namespace NonogramAutomation
             await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/buttonsHolder']/node[3]", timeout, token);
         }
 
+        private async Task GoToExtraDetailsAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@resource-id='com.ucdevs.jcross:id/info']", timeout, token);
+        }
+
         private async Task<string> ReadSizeAsync()
         {
             System.Xml.XmlDocument xml = await Utils.DumpXMLAsync(_adbInstance, _token) ?? throw new Exception("xml document was null");
@@ -216,17 +225,6 @@ namespace NonogramAutomation
             System.Xml.XmlAttribute attribute = attributes["text"] ?? throw new Exception("xml size node is missing text attribute");
             System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(attribute.Value, @"\d+x\d+", System.Text.RegularExpressions.RegexOptions.RightToLeft) ?? throw new Exception("xml size node attribute is not formatted properly");
             return match.Value;
-        }
-
-        private void UpdateValue(Puzzle puzzle, string propertyName, string newValue)
-        {
-            System.Reflection.PropertyInfo propertyInfo = typeof(Puzzle).GetProperty(propertyName) ?? throw new Exception($"puzzle is missing property {propertyName}");
-            string? previousValue = (string?)propertyInfo.GetValue(puzzle);
-            if (previousValue != newValue)
-            {
-                Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"Puzzle {puzzle.Link} is different for {propertyName} ('{previousValue}' vs '{newValue}')");
-                propertyInfo.SetValue(puzzle, newValue);
-            }
         }
 
         private async Task<(string, string, string)> ReadDetailsAsync()
@@ -272,6 +270,48 @@ namespace NonogramAutomation
             System.Xml.XmlAttributeCollection attributes = node.Attributes ?? throw new Exception("xml category node is missing attributes");
             System.Xml.XmlAttribute attribute = attributes["text"] ?? throw new Exception("xml category node is missing text attribute");
             return _categoryDictionnary.GetValueOrDefault(attribute.Value);
+        }
+
+        private async Task<string> ReadPuzzleTypeAsync()
+        {
+            System.Xml.XmlDocument xml = await Utils.DumpXMLAsync(_adbInstance, _token) ?? throw new Exception("xml document was null");
+            System.Xml.XmlNode? node = xml.SelectSingleNode("//node[@resource-id='com.ucdevs.jcross:id/tvSL']");
+            if (node is null)
+            {
+                return "0";
+            }
+            System.Xml.XmlAttributeCollection attributes = node.Attributes ?? throw new Exception("xml puzzle type node is missing attributes");
+            System.Xml.XmlAttribute attribute = attributes["text"] ?? throw new Exception("xml puzzle type node is missing text attribute");
+            switch (attribute.Value) 
+            {
+                case "Nonogramme authentiques":
+                    return "1";
+                case "Méthode de la récursion":
+                    return "2";
+                case "Méthode de la contradiction (Méthode d'essai et d'erreur)":
+                    return "3";
+                case "Beaucoup de petits segments (Mosaïque)":
+                    return "4";
+                case "Symétrie (95%)":
+                    return "5";
+                case "De nombreuses lignes simples (Coloriage):":
+                    return "6";
+                case "Quelques lignes simples":
+                    return "7";
+                default:
+                    throw new NotImplementedException();
+            };
+        }
+
+        private void UpdateValue(Puzzle puzzle, string propertyName, string newValue)
+        {
+            System.Reflection.PropertyInfo propertyInfo = typeof(Puzzle).GetProperty(propertyName) ?? throw new Exception($"puzzle is missing property {propertyName}");
+            string? previousValue = (string?)propertyInfo.GetValue(puzzle);
+            if (previousValue != newValue)
+            {
+                Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"LUA DIFFERENCE - Puzzle {puzzle.Link} is different for {propertyName} ('{previousValue}' vs '{newValue}')");
+                propertyInfo.SetValue(puzzle, newValue);
+            }
         }
 
         private async Task<string> PuzzleListToLua(List<Puzzle> puzzles)
