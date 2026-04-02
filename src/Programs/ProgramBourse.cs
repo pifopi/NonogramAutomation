@@ -196,7 +196,7 @@ namespace NonogramAutomation
                     case 2:
                         Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
                         await foundElement.Element.ClickAsync(linkedCts.Token);
-                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        await Task.Delay(TimeSpan.FromSeconds(2));
                         break;
                     default:
                         throw new Exception("Unexpected element index");
