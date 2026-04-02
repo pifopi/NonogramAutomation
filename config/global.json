@@ -5,11 +5,11 @@
   "MuMuInstances": [
     {
       "Name": "Principal",
-      "MuMuId": 0
+      "MuMuId": 2
     },
     {
       "Name": "Test",
-      "MuMuId": 1
+      "MuMuId": 3
     }
   ],
   "RealPhoneInstances": [
