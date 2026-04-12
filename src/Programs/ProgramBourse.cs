@@ -241,7 +241,7 @@ namespace NonogramAutomation
         {
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
-            await Utils.ClickElementAsync(_adbInstance, "//node[contains(@text, 'Réinitialiser')]", timeout, token);
+            await Utils.ClickElementAsync(_adbInstance, "//node[@text=\"Réinitialiser l'identifiant publicitaire\"]", timeout, token);
         }
 
         private async Task ClickOnConfirmAsync(TimeSpan timeout, CancellationToken token)
