@@ -1,3 +1,5 @@
+using AdvancedSharpAdbClient.DeviceCommands;
+
 namespace NonogramAutomation
 {
     public abstract class ProgramBourse : Program
@@ -43,14 +45,10 @@ namespace NonogramAutomation
                     await ClickOnGuildAsync(TimeSpan.FromSeconds(10), _token);
                     await ClickOnBourseAsync(TimeSpan.FromSeconds(10), _token);
                     await ScrollUntilItemAsync(item, TimeSpan.FromSeconds(10), _token);
+                    await ClickOnItemAsync(item, TimeSpan.FromSeconds(10), _token);
                     try
                     {
-                        await ClickOnItemAsync(item, TimeSpan.FromSeconds(30), _token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"Ad not loaded");
-                        continue;
+                        await WaitForAdAsync(item, TimeSpan.FromSeconds(10), _token);
                     }
                     catch (NoRoomForStorageException exception)
                     {
@@ -63,6 +61,17 @@ namespace NonogramAutomation
                             }
                             await Task.Delay(TimeSpan.FromMinutes(1));
                         }
+                    }
+                    catch (NoAdLoadedException exception)
+                    {
+                        Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
+                        await Utils.ClickHomeButtonAsync(_adbInstance, _token);
+                        await ClickOnSettingsAppAsync(TimeSpan.FromSeconds(10), _token);
+                        await ClickOnConfidentialityAsync(TimeSpan.FromSeconds(10), _token);
+                        await ClickOnAdsAsync(TimeSpan.FromSeconds(10), _token);
+                        await ClickOnResetAdsIDAsync(TimeSpan.FromSeconds(10), _token);
+                        await ClickOnConfirmAsync(TimeSpan.FromSeconds(10), _token);
+                        throw;
                     }
 
                     await ReturnToMainMenuAsync(TimeSpan.FromSeconds(90), _token);
@@ -80,6 +89,10 @@ namespace NonogramAutomation
                 catch (NoRoomForStorageException)
                 {
                     break;
+                }
+                catch (NoAdLoadedException)
+                {
+                    continue;
                 }
                 catch (Exception exception)
                 {
@@ -109,22 +122,13 @@ namespace NonogramAutomation
 
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
-            string itemAsString = item switch
-            {
-                BourseItem.TreasureMap => "Fragment",
-                BourseItem.CoffeeBean => "Grains",
-                BourseItem.Katana => "Katana",
-                BourseItem.Potion => "Potion",
-                _ => throw new NotImplementedException()
-            };
-
             List<string> queries = new()
             {
-                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]"
+                GetItemQuery(item)
             };
             for (int i = 20; i > 0; i--)
             {
-                queries.Add($"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='0:{i:D2}']]");
+                queries.Add(GetItemQuery(item, $"0:{i:D2}"));
             }
 
             while (true)
@@ -154,53 +158,40 @@ namespace NonogramAutomation
             }
         }
 
-        private async Task ClickOnItemAsync(BourseItem item, TimeSpan timeout, CancellationToken parentToken)
+        private async Task ClickOnItemAsync(BourseItem item, TimeSpan timeout, CancellationToken token)
         {
-            using var timeoutCts = new CancellationTokenSource(timeout);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(parentToken, timeoutCts.Token);
-
             using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
-            string itemAsString = item switch
-            {
-                BourseItem.TreasureMap => "Fragment",
-                BourseItem.CoffeeBean => "Grains",
-                BourseItem.Katana => "Katana",
-                BourseItem.Potion => "Potion",
-                _ => throw new NotImplementedException()
-            };
+            await Utils.ClickElementAsync(_adbInstance, GetItemQuery(item), timeout, token);
+        }
+
+        private async Task WaitForAdAsync(BourseItem item, TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
 
             List<string> queries = new()
             {
                 "//node[@resource-id='contain-paidtasks-survey']",
                 "//node[@text=\"Pas d'espace disponible dans l'entrepôt\"]",
-                $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='Regarder la pub']]"
+                GetItemQuery(item)
             };
 
-            while (true)
+            FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, timeout, token);
+            if (foundElement is null)
             {
-                linkedCts.Token.ThrowIfCancellationRequested();
-
-                FoundElement? foundElement = await Utils.FindElementAsync(_adbInstance, queries, TimeSpan.FromSeconds(2), linkedCts.Token);
-                if (foundElement is null)
-                {
-                    Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, "Ad loaded properly");
-                    return;
-                }
-                switch (foundElement.Index)
-                {
-                    case 0:
-                        throw new Exception("Survey detected");
-                    case 1:
-                        throw new NoRoomForStorageException();
-                    case 2:
-                        Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"Clicking on {item}");
-                        await foundElement.Element.ClickAsync(linkedCts.Token);
-                        await Task.Delay(TimeSpan.FromSeconds(2));
-                        break;
-                    default:
-                        throw new Exception("Unexpected element index");
-                }
+                Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, "Ad loaded properly");
+                return;
+            }
+            switch (foundElement.Index)
+            {
+                case 0:
+                    throw new Exception("Survey detected");
+                case 1:
+                    throw new NoRoomForStorageException();
+                case 2:
+                    throw new NoAdLoadedException();
+                default:
+                    throw new Exception("Unexpected element index");
             }
         }
 
@@ -225,9 +216,65 @@ namespace NonogramAutomation
             }
         }
 
+        private async Task ClickOnSettingsAppAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@text='Paramètres']", timeout, token);
+        }
+
+        private async Task ClickOnConfidentialityAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@text='Confidentialité']", timeout, token);
+        }
+
+        private async Task ClickOnAdsAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@text='Annonces']", timeout, token);
+        }
+
+        private async Task ClickOnResetAdsIDAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[contains(@text, 'Réinitialiser')]", timeout, token);
+        }
+
+        private async Task ClickOnConfirmAsync(TimeSpan timeout, CancellationToken token)
+        {
+            using LogContext logContext = new(Logger.LogLevel.Debug, _adbInstance.LogHeader);
+
+            await Utils.ClickElementAsync(_adbInstance, "//node[@text='CONFIRMER']", timeout, token);
+        }
+
+        private string GetItemQuery(BourseItem item, string suffix = "Regarder la pub")
+        {
+            string itemAsString = item switch
+            {
+                BourseItem.TreasureMap => "Fragment",
+                BourseItem.CoffeeBean => "Grains",
+                BourseItem.Katana => "Katana",
+                BourseItem.Potion => "Potion",
+                _ => throw new NotImplementedException()
+            };
+
+            return $"//node[@resource-id='com.ucdevs.jcross:id/clickItem'][descendant::node[@resource-id='com.ucdevs.jcross:id/tvSellName' and contains(@text, '{itemAsString}')] and descendant::node[@resource-id='com.ucdevs.jcross:id/tvBuyName' and @text='{suffix}']]";
+        }
+
         private class NoRoomForStorageException : Exception
         {
             public NoRoomForStorageException()
+            {
+            }
+        }
+
+        private class NoAdLoadedException : Exception
+        {
+            public NoAdLoadedException()
             {
             }
         }

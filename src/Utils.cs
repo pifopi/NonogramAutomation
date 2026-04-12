@@ -250,9 +250,16 @@ namespace NonogramAutomation
 
         public static async Task ClickBackButtonAsync(ADBInstance adbInstance, CancellationToken token)
         {
-            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Clicking back");
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Clicking back button");
 
             await adbInstance.AdbClient.ClickBackButtonAsync(adbInstance.DeviceData, token);
+        }
+
+        public static async Task ClickHomeButtonAsync(ADBInstance adbInstance, CancellationToken token)
+        {
+            Logger.Log(Logger.LogLevel.Info, adbInstance.LogHeader, "Clicking home button");
+
+            await adbInstance.AdbClient.ClickHomeButtonAsync(adbInstance.DeviceData, token);
         }
 
         public static async Task SwipeAsync(ADBInstance adbInstance, System.Drawing.Point first, System.Drawing.Point second, long speed, CancellationToken token)
