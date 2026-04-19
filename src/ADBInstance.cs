@@ -90,6 +90,7 @@ namespace NonogramAutomation
                 ProgramType.Dump => new ProgramDump(this, _programCts.Token),
                 ProgramType.Favorites => new ProgramFavorite(this, _programCts.Token),
                 ProgramType.Lua => new ProgramLua(this, _programCts.Token),
+                ProgramType.StartEmulator => new ProgramStartEmulator(this, _programCts.Token),
                 _ => throw new NotImplementedException()
             };
             

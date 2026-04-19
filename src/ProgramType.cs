@@ -12,5 +12,6 @@
         Dump,
         Favorites,
         Lua,
+        StartEmulator,
     }
 }

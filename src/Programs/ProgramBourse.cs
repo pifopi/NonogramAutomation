@@ -1,5 +1,3 @@
-using AdvancedSharpAdbClient.DeviceCommands;
-
 namespace NonogramAutomation
 {
     public abstract class ProgramBourse : Program
