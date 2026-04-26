@@ -61,7 +61,11 @@
                 if (commandLine != null &&
                     commandLine.Contains($"-v {MuMuId}"))
                 {
-                    process.CloseMainWindow();
+                    bool result = process.CloseMainWindow();
+                    if (result == false)
+                    {
+                        throw new Exception("The window cannot be closed");
+                    }
                     await process.WaitForExitAsync();
                 }
             }
