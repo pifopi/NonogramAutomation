@@ -340,8 +340,8 @@ namespace NonogramAutomation
         public override async Task StartAsync()
         {
             await StartAsync(BourseItem.Katana, ActionWhenFull.Continue);
-            await StartAsync(BourseItem.Potion, ActionWhenFull.Continue);
             await StartAsync(BourseItem.CoffeeBean, ActionWhenFull.Continue);
+            await StartAsync(BourseItem.Potion, ActionWhenFull.Continue);
             await StartAsync(BourseItem.TreasureMap, ActionWhenFull.Stop);
         }
     }
