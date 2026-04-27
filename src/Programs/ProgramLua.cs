@@ -294,7 +294,7 @@ namespace NonogramAutomation
                     return "4";
                 case "Symétrie (95%)":
                     return "5";
-                case "De nombreuses lignes simples (Coloriage):":
+                case "De nombreuses lignes simples (Coloriage)":
                     return "6";
                 case "Quelques lignes simples":
                     return "7";
