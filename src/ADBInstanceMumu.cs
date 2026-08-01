@@ -10,6 +10,14 @@
             set { _mumuId = value; OnPropertyChanged(); }
         }
 
+        private string _androidVersion = string.Empty;
+
+        public string AndroidVersion
+        {
+            get => _androidVersion;
+            set { _androidVersion = value; OnPropertyChanged(); }
+        }
+
         public override string LogHeader
         {
             get => $"{Name} | {IP}:{Port} | {MuMuId}";
@@ -18,7 +26,7 @@
         public override async Task StartEmulator(CancellationToken token)
         {
             using LogContext logContext = new(Logger.LogLevel.Info, LogHeader);
-            Utils.ExecuteCmd(System.IO.Path.Combine(SettingsManager.GlobalSettings.MuMuPath, "nx_device", "12.0", "shell", "MuMuNxDevice.exe"), $"-v {MuMuId}");
+            Utils.ExecuteCmd(System.IO.Path.Combine(SettingsManager.GlobalSettings.MuMuPath, "nx_device", AndroidVersion, "shell", "MuMuNxDevice.exe"), $"-v {MuMuId}");
 
             while (true)
             {
@@ -73,7 +81,7 @@
 
         protected override int GetPort()
         {
-            string configFile = System.IO.Path.Combine(SettingsManager.GlobalSettings.MuMuPath, "vms", $"MuMuPlayerGlobal-12.0-{MuMuId}", "configs", "vm_config.json");
+            string configFile = System.IO.Path.Combine(SettingsManager.GlobalSettings.MuMuPath, "vms", $"MuMuPlayerGlobal-{AndroidVersion}-{MuMuId}", "configs", "vm_config.json");
             string jsonContent = System.IO.File.ReadAllText(configFile);
             Newtonsoft.Json.Linq.JObject jsonFile = Newtonsoft.Json.Linq.JObject.Parse(jsonContent);
             string? portAsString = jsonFile.SelectToken("vm")?.SelectToken("nat")?.SelectToken("port_forward")?.SelectToken("adb")?.SelectToken("host_port")?.ToString();

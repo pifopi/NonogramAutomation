@@ -4,5 +4,6 @@
     {
         public required string Name { get; set; }
         public int MuMuId { get; set; }
+        public required string AndroidVersion { get; set; }
     }
 }

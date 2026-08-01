@@ -23,7 +23,8 @@
                 ADBInstancesMuMu.Add(new ADBInstanceMuMu
                 {
                     Name = s.Name,
-                    MuMuId = s.MuMuId
+                    MuMuId = s.MuMuId,
+                    AndroidVersion = s.AndroidVersion
                 });
             }
 
