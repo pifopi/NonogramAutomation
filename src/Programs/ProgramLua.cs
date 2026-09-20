@@ -9,7 +9,6 @@ namespace NonogramAutomation
             public required string Link { get; set; }
             public required string Author { get; set; }
             public required string XP { get; set; }
-            public required string NewXP { get; set; }
             public required string Size { get; set; }
             public required string Category1 { get; set; }
             public required string Category2 { get; set; }
@@ -161,7 +160,6 @@ namespace NonogramAutomation
 
                 string author = table.Get("author").String;
                 string xp = table.Get("xp").String;
-                string new_xp = table.Get("new_xp").String;
                 string size = table.Get("size").String;
                 string category_1 = table.Get("category_1").String;
                 string category_2 = table.Get("category_2").String;
@@ -172,7 +170,6 @@ namespace NonogramAutomation
                     Link = link,
                     Author = author,
                     XP = xp,
-                    NewXP = new_xp,
                     Size = size,
                     Category1 = category_1,
                     Category2 = category_2,
@@ -327,7 +324,6 @@ namespace NonogramAutomation
                 sb.AppendLine($"\t\tlink            = \"{puzzle.Link.Replace("\"", "\\\"")}\",");
                 sb.AppendLine($"\t\tauthor          = \"{puzzle.Author}\",");
                 sb.AppendLine($"\t\txp              = \"{puzzle.XP}\",");
-                sb.AppendLine($"\t\tnew_xp          = \"{puzzle.NewXP}\",");
                 sb.AppendLine($"\t\tsize            = \"{puzzle.Size}\",");
                 sb.AppendLine($"\t\tcategory_1      = \"{puzzle.Category1}\",");
                 sb.AppendLine($"\t\tcategory_2      = \"{puzzle.Category2}\",");
@@ -341,7 +337,6 @@ namespace NonogramAutomation
             sb.AppendLine($"\t\tlink            = \"\",");
             sb.AppendLine($"\t\tauthor          = \"\",");
             sb.AppendLine($"\t\txp              = \"\",");
-            sb.AppendLine($"\t\tnew_xp          = \"\",");
             sb.AppendLine($"\t\tsize            = \"\",");
             sb.AppendLine($"\t\tcategory_1      = \"\",");
             sb.AppendLine($"\t\tcategory_2      = \"\",");
