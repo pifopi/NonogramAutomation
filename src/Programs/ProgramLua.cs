@@ -89,6 +89,7 @@ namespace NonogramAutomation
         {
             List<Puzzle> BWs = GetPuzzlesFromLua("config/BWs.lua");
             List<Puzzle> colors = GetPuzzlesFromLua("config/Colors.lua");
+            List<Puzzle> others = GetPuzzlesFromLua("config/Others.lua");
             try
             {
                 await _adbInstance.ConnectToInstanceAsync(_token);
@@ -100,6 +101,10 @@ namespace NonogramAutomation
                 await UpdatePuzzleList(colors);
                 string colorsLuaContent = await PuzzleListToLua(colors);
                 System.IO.File.WriteAllText("Colors_cleaned.lua", colorsLuaContent);
+
+                await UpdatePuzzleList(others);
+                string othersLuaContent = await PuzzleListToLua(others);
+                System.IO.File.WriteAllText("Others_cleaned.lua", othersLuaContent);
 
                 Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Done dumping updated LUA files");
             }
