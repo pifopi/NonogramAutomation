@@ -13,6 +13,7 @@ namespace NonogramAutomation
             public required string Category1 { get; set; }
             public required string Category2 { get; set; }
             public required string PuzzleType { get; set; }
+            public required bool ToDelete = false;
         }
 
         static Dictionary<string, string> _categoryDictionnary = new()
@@ -125,6 +126,7 @@ namespace NonogramAutomation
                 if (element is null)
                 {
                     Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"LUA DIFFERENCE - Puzzle {puzzle.Link} has been deleted')");
+                    puzzle.ToDelete = true;
                     continue;
                 }
                 string size = await ReadSizeAsync();
@@ -140,6 +142,8 @@ namespace NonogramAutomation
                 UpdateValue(puzzle, "PuzzleType", puzzleType);
                 await Utils.ClickBackButtonAsync(_adbInstance, _token);
             }
+
+            puzzles.RemoveAll(puzzle => puzzle.ToDelete);
         }
 
         private List<Puzzle> GetPuzzlesFromLua(string luaFile)
@@ -173,7 +177,8 @@ namespace NonogramAutomation
                     Size = size,
                     Category1 = category_1,
                     Category2 = category_2,
-                    PuzzleType = puzzle_type
+                    PuzzleType = puzzle_type,
+                    ToDelete = false
                 });
             }
             return puzzles;
