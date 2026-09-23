@@ -87,31 +87,27 @@ namespace NonogramAutomation
 
         public override async Task StartAsync()
         {
-            List<Puzzle> BWs = GetPuzzlesFromLua("config/BWs.lua");
-            List<Puzzle> colors = GetPuzzlesFromLua("config/Colors.lua");
-            List<Puzzle> others = GetPuzzlesFromLua("config/Others.lua");
             try
             {
                 await _adbInstance.ConnectToInstanceAsync(_token);
 
-                await UpdatePuzzleList(BWs);
-                string BWsLuaContent = await PuzzleListToLua(BWs);
-                System.IO.File.WriteAllText("BWs_cleaned.lua", BWsLuaContent);
-
-                await UpdatePuzzleList(colors);
-                string colorsLuaContent = await PuzzleListToLua(colors);
-                System.IO.File.WriteAllText("Colors_cleaned.lua", colorsLuaContent);
-
-                await UpdatePuzzleList(others);
-                string othersLuaContent = await PuzzleListToLua(others);
-                System.IO.File.WriteAllText("Others_cleaned.lua", othersLuaContent);
-
-                Logger.Log(Logger.LogLevel.Info, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> Done dumping updated LUA files");
+                await HandleDatabase("BWs");
+                await HandleDatabase("BWsOther");
+                await HandleDatabase("Colors");
+                await HandleDatabase("ColorsOther");
             }
             catch (Exception exception)
             {
                 Logger.Log(Logger.LogLevel.Warning, _adbInstance.LogHeader, $"<@{SettingsManager.GlobalSettings.DiscordUserId}> An exception has been raised:{exception}");
             }
+        }
+
+        private async Task HandleDatabase(string name)
+        {
+            List<Puzzle> list = GetPuzzlesFromLua($"config/{name}.lua");
+            await UpdatePuzzleList(list);
+            string luaContent = await PuzzleListToLua(list);
+            System.IO.File.WriteAllText($"{name}_cleaned.lua", luaContent);
         }
 
         private async Task UpdatePuzzleList(List<Puzzle> puzzles)
