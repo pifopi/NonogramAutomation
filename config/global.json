@@ -5,13 +5,13 @@
   "MuMuInstances": [
     {
       "Name": "Principal",
-      "MuMuId": 1,
-      "AndroidVersion": "15.0"
+      "MuMuId": 4,
+      "AndroidVersion": "12.0"
     },
     {
-      "Name": "Test",
-      "MuMuId": 2,
-      "AndroidVersion": "15.0"
+      "Name": "Secondaire",
+      "MuMuId": 5,
+      "AndroidVersion": "12.0"
     }
   ],
   "RealPhoneInstances": [
